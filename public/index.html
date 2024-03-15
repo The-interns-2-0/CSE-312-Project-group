@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <head>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-    <div class="login-form">
-        <h2>Login to your Intern 2.0 Account</h2>
+    <div class="register-form">
+        <h2>Sign Up</h2>
         <form>
-        <input type="text" title="username" placeholder="username" />
-        <input type="password" title="username" placeholder="password" />
-        <button type="submit" class="btn">Login</button>
+        <input type="text" id="reg_user" title="username" placeholder="username" />
+        <input type="password"  id="reg_pass" title="username" placeholder="password" />
+        <button type="submit" onclick="send_reg()" class="btn">SignUp</button>
         </form>
     </div>
 
     <div class="login-form">
-        <h2>Sign Up</h2>
-        <form>
+        <h2>Login to your Intern 2.0 Account</h2>
+        <form method="post" enctype="application/x-www-form-urlencoded">
         <input type="text" title="username" placeholder="username" />
         <input type="password" title="username" placeholder="password" />
-        <button type="submit" class="btn">SignUp</button>
+        <button type="submit"  class="btn">Login</button>
         </form>
     </div>
+
+    
+    <script src="functions.js"></script>
 </body>
