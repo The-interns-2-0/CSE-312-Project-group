@@ -1,9 +1,11 @@
-from flask import Flask,make_response,request,redirect, url_for
+from flask import Flask,make_response,request,redirect,abort
 from pymongo import MongoClient
 from json import dumps,loads
+import bcrypt
+import uuid
 app = Flask(__name__)
 
-mongo_client = MongoClient("localhost")
+mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
 collection = db['user_infor']
 
@@ -18,15 +20,7 @@ def index():
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
             return response
-    # else:
-    #     data = request.json
-    #     print(data["user"])
-    # with open("./public/index.html","r") as file:
-    #         file = file.read()
-    #         response = make_response(file)
-    #         response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    #         response.headers['X-Content-Type-Options'] = 'nosniff'
-    #         return response
+
 @app.route("/functions.js")
 def func():
     with open("./public/function.js","r") as file:
@@ -54,10 +48,15 @@ def fav():
 @app.route("/register", methods=['GET','POST'])
 def get_data():
     # print(request)
-    data = request.json
-    data.get("reg_user")
-    data.get("reg_pass")
-    return redirect("/favicon.ico",302)
+    data = request.form
+    if data.get("reg_pass")!= data.get("conform_pass"):
+        return abort(404)
+    def hash_password(password):
+        salt = bcrypt.gensalt()  
+        return bcrypt.hashpw(password.encode(), salt)  
+    collection.insert_one({"username":data.get("reg_user"),"password":hash_password(data.get("reg_pass")),"auth":""})
+
+    return redirect("/",302)
     
 if __name__ == '__main__':
     app.run(host='localhost', port=8080,debug=True)#debug=True
