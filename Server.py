@@ -2,7 +2,7 @@ from flask import Flask,make_response,request,redirect,abort
 from pymongo import MongoClient
 from json import dumps,loads
 import bcrypt
-import uuid
+from html import escape
 app = Flask(__name__)
 
 mongo_client = MongoClient("mongo")
@@ -47,17 +47,17 @@ def fav():
         return response
 @app.route("/register", methods=['GET','POST'])
 def get_data():
-    # print(request)
     data = request.form
+    if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
+        return abort(404)
     if data.get("reg_pass")!= data.get("conform_pass"):
         return abort(404)
     def hash_password(password):
         salt = bcrypt.gensalt()  
         return bcrypt.hashpw(password.encode(), salt)  
-    collection.insert_one({"username":data.get("reg_user"),"password":hash_password(data.get("reg_pass")),"auth":""})
-
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"auth":""})
     return redirect("/",302)
     
 if __name__ == '__main__':
-    app.run(host='localhost', port=8080,debug=True)#debug=True
+    app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
 
