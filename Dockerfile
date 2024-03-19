@@ -5,7 +5,7 @@ COPY . .
 # Download dependancies
 RUN pip3 install -r requirement.txt
 
-EXPOSE 8080
+EXPOSE 8000
 #Base off of the in class slides :)
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
