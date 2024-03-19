@@ -49,15 +49,15 @@ def fav():
         return response
 @app.route("/register", methods=['GET','POST'])
 def get_data():
-    # print(request)
     data = request.form
+    if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
+        return abort(404)
     if data.get("reg_pass")!= data.get("conform_pass"):
         return abort(404)
     def hash_password(password):
         salt = bcrypt.gensalt()  
         return bcrypt.hashpw(password.encode(), salt)  
-    collection.insert_one({"username":data.get("reg_user"),"password":hash_password(data.get("reg_pass")),"auth":""})
-
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"auth":""})
     return redirect("/",302)
     
 @app.route("/login", methods=['GET','POST'])
