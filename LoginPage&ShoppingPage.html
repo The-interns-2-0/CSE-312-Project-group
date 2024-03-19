@@ -4,104 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Interns2.0</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            width: 100%;
-        }
-
-        .product-container {
-            width: 70%;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 20px;
-        }
-
-        .product {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
-
-        .product img {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .product h2 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .product p {
-            margin-bottom: 10px;
-        }
-
-        .btn {
-            background-color: #333;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .btn:hover {
-            background-color: #555;
-        }
-
-        .login-container {
-            width: 25%;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
-
-        .login-container input {
-            width: calc(100% - 20px);
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .shopping-cart {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="Login&Shopping.css">
 </head>
 <body>
     <header>
@@ -110,55 +13,55 @@
     <div class="container">
         <div class="product-container">
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/egg.webp" alt="Product 1 Image">
+                <img src="/public/Image/egg.jpg" alt="Product 1 Image" class="product-container">
                 <h2>Egg</h2>
                 <p>$5.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/tomato.jpeg" alt="Product 1 Image">
+                <img src="/public/Image/tomato.jpg" alt="Product 2 Image" class="product-container">
                 <h2>Tomato</h2>
                 <p>$3.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/lemon.jpeg" alt="Product 1 Image">
+                <img src="/public/Image/lemon.jpg" alt="Product 3 Image" class="product-container">
                 <h2>Lemon</h2>
                 <p>$2.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/Oranges.webp" alt="Product 1 Image">
+                <img src="/public/Image/Oranges.jpg" alt="Product 4 Image" class="product-container">
                 <h2>Oranges</h2>
                 <p>$2.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/Potato.jpeg" alt="Product 1 Image">
+                <img src="/public/Image/Potato.jpg" alt="Product 5 Image" class="product-container">
                 <h2>Potato</h2>
                 <p>$2.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/apple.jpeg" alt="Product 1 Image">
+                <img src="/public/Image/apple.jpg" alt="Product 6 Image" class="product-container">
                 <h2>Apple</h2>
                 <p>$3.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/strawberry.avif" alt="Product 1 Image">
+                <img src="/public/Image/strawberry.jpg" alt="Product 7 Image" class="product-container">
                 <h2>Strawberry</h2>
                 <p>$4.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/blueberry.webp" alt="Product 1 Image">
+                <img src="/public/Image/blueberry.jpg" alt="Product 8 Image" class="product-container">
                 <h2>Blueberry</h2>
                 <p>$7.99</p>
                 <button class="btn">Add to Cart</button>
             </div>
             <div class="product">
-                <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/corn.jpeg" alt="Product 1 Image">
+                <img src="/public/Image/corn.jpg" alt="Product 9 Image" class="product-container">
                 <h2>Corn</h2>
                 <p>$3.99</p>
                 <button class="btn">Add to Cart</button>
@@ -173,7 +76,7 @@
                 <button type="submit" class="btn">Sign Up</button>
             </form>
         </div>
-        <img src="/Users/eliseliu/github/312 Team/CSE-312-Project-group/Image/shopping cart.jpeg" alt="Shopping Cart" class="shopping-cart">
+        <img src="public/Image/shopping cart.jpeg" alt="Shopping Cart" class="shopping-cart">
     </div>
 </body>
 </html>
