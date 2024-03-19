@@ -4,6 +4,7 @@ from json import dumps,loads
 import bcrypt
 import uuid
 import hashlib
+from html import escape
 app = Flask(__name__)
 
 mongo_client = MongoClient("mongo")
@@ -18,7 +19,6 @@ def index():
         with open("./public/index.html","r") as file:
             file = file.read()
             response = make_response(file)
-            response.headers["Set-Cookie"] = 'Cookie=1' 
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
             return response
@@ -70,7 +70,9 @@ def login():
         hashtoken = hashlib.sha256(str(auth_token).encode()).hexdigest()
         #at = 'auth_token='+str(auth_token)
         response = make_response(redirect('/',302))
-        response.set_cookie('auth_token', str(auth_token))
+        response.set_cookie('auth_token', str(auth_token),3600,httponly=True)
+        response.headers['HttpOnly']='True'
+
         auth_collection.insert_one({"username":data.get("login_user"),"auth_toke":hashtoken})
         return response
     return abort(404)
