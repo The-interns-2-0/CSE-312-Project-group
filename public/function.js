@@ -16,3 +16,4 @@ function send_reg() {
     .then(response => response.json())
     ;
 }
+
