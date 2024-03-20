@@ -5,12 +5,18 @@ import bcrypt
 import uuid
 import hashlib
 from html import escape
+import os
 app = Flask(__name__)
 
 mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
 collection = db['user_infor']
 auth_collection = db['auth_db']
+
+
+
+
+
 
 @app.route("/", methods=['GET','POST'])
 def index():
@@ -47,6 +53,35 @@ def fav():
         response.headers['Content-Type'] = 'text/css; charset=utf-8'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
+    
+# @app.route("/public/Image/egg.jpg")
+# def serve_file():
+#     print("-------------------------------")
+#     with open("./public/Image/egg.jpg", "rb") as file:
+#         file_content = file.read()
+#     response = make_response(file_content)
+#     response.headers['Content-Type'] = 'image/jpeg'
+#     response.headers['X-Content-Type-Options'] = 'nosniff'
+#     return response
+
+@app.route("/public/Image/<filename>")
+def serve_image(filename):
+    print("-------------------------------")
+    image_path = os.path.join("./public/Image", filename)
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as file:
+            file_content = file.read()
+        response = make_response(file_content)
+        response.headers['Content-Type'] = 'image/jpeg'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+
+
+    
+
+
+
 @app.route("/register", methods=['GET','POST'])
 def get_data():
     data = request.form
@@ -80,4 +115,3 @@ def login():
 if __name__ == '__main__':
     #port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
-
