@@ -8,7 +8,7 @@ import hashlib
 
 app = Flask(__name__)
 
-mongo_client = MongoClient("localhost")
+mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
 collection = db['user_infor']
 auth_collection = db['auth_db']
