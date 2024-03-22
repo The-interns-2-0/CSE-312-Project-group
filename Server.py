@@ -1,4 +1,4 @@
-from flask import Flask,make_response,request,redirect,abort
+from flask import Flask,make_response,request,redirect,abort,jsonify
 from pymongo import MongoClient
 from json import dumps,loads
 import bcrypt
@@ -8,7 +8,7 @@ import hashlib
 
 app = Flask(__name__)
 
-mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("localhost")
 db = mongo_client['user_database']
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -84,9 +84,8 @@ def logout():
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
-        chat=list(chat_collection.find({}))
-        for i in chat:
-            del i["_id"]
+        chat=list(chat_collection.find({},{"_id":0}))
+        # print(chat)
         res=dumps(chat)
         return res
     if request.method == 'POST':
@@ -95,15 +94,8 @@ def add():
         msg=data.get("chat")
         msg=escape(msg)
         auth=request.cookies.get('auth_token')
-        # if auth is not None:
-        #     auth_collection.find_one({"":})
+        None
 
-
-
-    
-    
-# @app.route("/total", methods=['GET','POST'])
-# get-> mongo 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
 
