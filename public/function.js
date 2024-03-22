@@ -14,12 +14,13 @@ function addchat() {
         body: JSON.stringify(data)
     })
     .then(response => response.json())
+    .then(data=>location.reload())
+    
     ;
 }
 function sendmsg() {
     console.log("send");
     messages.innerHTML = "";
-    
     fetch('/addchat')
     .then(response => response.json())
     .then(json => {
