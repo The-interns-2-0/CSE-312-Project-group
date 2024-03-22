@@ -37,3 +37,38 @@ function login() {
     ;
 }
 
+
+
+function sendChat() {
+    const chatTextBox = document.getElementById("chat-text-box");
+    const message = chatTextBox.value;
+    chatTextBox.value = "";
+    console.log("llllll")
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({'messageType': 'chatMessage', 'message': message}));
+    } else {
+        const data = { message: message };
+        fetch('/chat-messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+
+            return response.json();
+        })
+        .then(json => {
+            console.log(json); 
+        })
+        .catch(error => {
+            console.error('catch error', error);
+        });
+    }
+
+    chatTextBox.focus();
+}
+

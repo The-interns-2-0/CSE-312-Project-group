@@ -112,6 +112,22 @@ def login():
         return response
     return abort(404)
 
+
+@app.route("/chat-messages", methods=['POST'])
+def chat():
+    data = request.form
+    name = "Guest"
+    token = data.get("auth_token","")
+
+
+    return redirect("/",302)
+
+@app.route("/chat-messages", methods=['GET'])
+def send_chat():
+    return redirect("/",404)
+
+
+
 if __name__ == '__main__':
     #port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
