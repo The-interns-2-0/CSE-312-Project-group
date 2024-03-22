@@ -12,7 +12,7 @@ mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
 collection = db['user_infor']
 auth_collection = db['auth_db']
-
+chat_collection = db["msg_db"]
 
 
 
@@ -113,18 +113,15 @@ def login():
     return abort(404)
 
 
-@app.route("/chat-messages", methods=['POST'])
-def chat():
+@app.route("/send", methods=['GET','POST'])
+def send():
     data = request.form
-    name = "Guest"
-    token = data.get("auth_token","")
-
-
-    return redirect("/",302)
-
-@app.route("/chat-messages", methods=['GET'])
-def send_chat():
-    return redirect("/",404)
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    if auth_collection.find_one({"auth_token":hashtoken})!=None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        chat_collection.insert_one({"username":item["user_name"],"message":data.get("msg")})
+        return make_response(200)
 
 
 
