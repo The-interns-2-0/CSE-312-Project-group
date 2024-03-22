@@ -3,16 +3,21 @@ from pymongo import MongoClient
 from json import dumps,loads
 import bcrypt
 import uuid
-from html import escape
 import hashlib
-
+from html import escape
+import os
 app = Flask(__name__)
 
 mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
+
+
 collection = db['user_infor']
 auth_collection = db['auth_db']
-chat_collection = db['chat']
+
+message_collection = db['message_collection']
+
+
 @app.route("/", methods=['GET','POST'])
 def index():
     # if request.method == 'GET':
@@ -48,6 +53,35 @@ def fav():
         response.headers['Content-Type'] = 'text/css; charset=utf-8'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
+    
+# @app.route("/public/Image/egg.jpg")
+# def serve_file():
+#     print("-------------------------------")
+#     with open("./public/Image/egg.jpg", "rb") as file:
+#         file_content = file.read()
+#     response = make_response(file_content)
+#     response.headers['Content-Type'] = 'image/jpeg'
+#     response.headers['X-Content-Type-Options'] = 'nosniff'
+#     return response
+
+@app.route("/public/Image/<filename>")
+def serve_image(filename):
+    print("-------------------------------")
+    image_path = os.path.join("./public/Image", filename)
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as file:
+            file_content = file.read()
+        response = make_response(file_content)
+        response.headers['Content-Type'] = 'image/jpeg'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+
+
+    
+
+
+
 @app.route("/register", methods=['GET','POST'])
 def get_data():
     data = request.form
@@ -60,10 +94,10 @@ def get_data():
         return bcrypt.hashpw(password.encode(), salt)  
     collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"auth":""})
     return redirect("/",302)
+    
 @app.route("/login", methods=['GET','POST'])
 def login():
     # print(request)
-    
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
@@ -73,37 +107,47 @@ def login():
         response = make_response(redirect('/',302))
         response.set_cookie('auth_token', str(auth_token),3600,httponly=True)
         response.headers['HttpOnly']='True'
-        auth_collection.insert_one({"username":data.get("login_user"),"auth_toke":hashtoken})
+
+        auth_collection.insert_one({"username":data.get("login_user"),"auth_token":hashtoken})
         return response
     return abort(404)
-@app.route("/logout", methods=['GET','POST'])
-def logout():
-    resp = make_response(redirect('/'))
-    resp.delete_cookie('auth_token')
-    return resp
+
+
 @app.route("/addchat", methods=['GET','POST'])
 def add():
+
     if request.method == 'GET':
-        chat=list(chat_collection.find({}))
-        for i in chat:
-            del i["_id"]
-        res=dumps(chat)
-        return res
+        return "ssssss"
     if request.method == 'POST':
-        #201 created
         data = request.json
         msg=data.get("chat")
         msg=escape(msg)
-        auth=request.cookies.get('auth_token')
-        # if auth is not None:
-        #     auth_collection.find_one({"":})
+        # auth=request.cookies.get('auth_token')
+
+        name = "Guest"
 
 
-
+        token = request.cookies.get('auth_token','')
     
-    
-# @app.route("/total", methods=['GET','POST'])
-# get-> mongo 
+        hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+        
+        if token != '':
+            print("----------------------")
+            item = auth_collection.find_one({"auth_token":hashtoken})
+            name = item["username"]
+            print(f"----->>>> {name}")
+
+        chat_message = {
+            "message": msg,
+            "username": name,
+            
+        }
+        message_collection.insert_one(chat_message)
+
+        return redirect("/",302)
+
+
+
 if __name__ == '__main__':
+    #port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
-
