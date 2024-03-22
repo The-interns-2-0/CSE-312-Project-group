@@ -73,9 +73,7 @@ def get_data():
 def login():
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
-
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
-
         auth_token = uuid.uuid4()
         hashtoken = hashlib.sha256(str(auth_token).encode()).hexdigest()
         response = make_response(redirect('/',302))
@@ -94,17 +92,34 @@ def logout():
 def add():
     if request.method == 'GET':
         chat=list(chat_collection.find({},{"_id":0}))
-        # print(chat)
         res=dumps(chat)
         return res
     if request.method == 'POST':
         data = request.json
         msg=data.get("chat")
-        print(msg)
         msg=escape(msg)
-        auth=request.cookies.get('auth_token')
+        name = "Guest"
+        token = request.cookies.get('auth_token')
+        hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+        if auth_collection.find_one({"auth_token":hashtoken})!= None:
+            item = auth_collection.find_one({"auth_token":hashtoken})
+            name = item["username"]
+        chat_message = {
+            "message": msg,
+            "username": name,
+            "thumbsup":0,
+            "thumbsdown":0
+        }
+        chat_collection.insert_one(chat_message)
 
-        None
+        response = make_response(jsonify({
+            "message": msg,
+            "username": name,
+            "thumbsup":0,
+            "thumbsdown":0
+        }))
+        response.status_code = 201
+        return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
