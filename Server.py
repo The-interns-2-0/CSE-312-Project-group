@@ -16,9 +16,13 @@ chat_collection = db['chat']
 @app.route("/", methods=['GET','POST'])
 def index():
     # if request.method == 'GET':
-        print("here")
         with open("./public/index.html","r") as file:
             file = file.read()
+            auth=request.cookies.get('auth_token')
+            # print(hashlib.sha256(str(auth).encode()).hexdigest())
+            # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
+            if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
+                file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -49,11 +53,16 @@ def fav():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
 @app.route("/register", methods=['GET','POST'])
+
 def get_data():
     data = request.form
+    # print("heres")
+    print(data)
     if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
+        print("colle")
         return abort(404)
     if data.get("reg_pass")!= data.get("conform_pass"):
+        print("pass")
         return abort(404)
     def hash_password(password):
         salt = bcrypt.gensalt()  
@@ -62,18 +71,18 @@ def get_data():
     return redirect("/",302)
 @app.route("/login", methods=['GET','POST'])
 def login():
-    # print(request)
-    
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
+
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
+
         auth_token = uuid.uuid4()
         hashtoken = hashlib.sha256(str(auth_token).encode()).hexdigest()
-        #at = 'auth_token='+str(auth_token)
         response = make_response(redirect('/',302))
         response.set_cookie('auth_token', str(auth_token),3600,httponly=True)
         response.headers['HttpOnly']='True'
-        auth_collection.insert_one({"username":data.get("login_user"),"auth_toke":hashtoken})
+        auth_collection.delete_one({"username":data.get("login_user")})
+        auth_collection.insert_one({"username":data.get("login_user"),"auth_token":hashtoken})
         return response
     return abort(404)
 @app.route("/logout", methods=['GET','POST'])
@@ -89,11 +98,12 @@ def add():
         res=dumps(chat)
         return res
     if request.method == 'POST':
-        #201 created
         data = request.json
         msg=data.get("chat")
+        print(msg)
         msg=escape(msg)
         auth=request.cookies.get('auth_token')
+
         None
 
 if __name__ == '__main__':
