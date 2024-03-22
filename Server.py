@@ -12,7 +12,7 @@ mongo_client = MongoClient("mongo")
 db = mongo_client['user_database']
 collection = db['user_infor']
 auth_collection = db['auth_db']
-
+chat_collection = db['chat']
 @app.route("/", methods=['GET','POST'])
 def index():
     # if request.method == 'GET':
@@ -63,6 +63,7 @@ def get_data():
 @app.route("/login", methods=['GET','POST'])
 def login():
     # print(request)
+    
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
@@ -80,7 +81,29 @@ def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth_token')
     return resp
+@app.route("/addchat", methods=['GET','POST'])
+def add():
+    if request.method == 'GET':
+        chat=list(chat_collection.find({}))
+        for i in chat:
+            del i["_id"]
+        res=dumps(chat)
+        return res
+    if request.method == 'POST':
+        #201 created
+        data = request.json
+        msg=data.get("chat")
+        msg=escape(msg)
+        auth=request.cookies.get('auth_token')
+        # if auth is not None:
+        #     auth_collection.find_one({"":})
+
+
+
     
+    
+# @app.route("/total", methods=['GET','POST'])
+# get-> mongo 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
 
