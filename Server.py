@@ -8,11 +8,17 @@ import hashlib
 
 app = Flask(__name__)
 
-mongo_client = MongoClient("mongo")
-db = mongo_client['user_database']
+#mongo_client = MongoClient("mongo")
+#db = mongo_client['user_database']
+
+mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
+db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
+
+#data base for like and dislikes
+like_collection=db["like_or_dislike"]
 @app.route("/", methods=['GET','POST'])
 def index():
     # if request.method == 'GET':
@@ -101,12 +107,14 @@ def add():
         name = "Guest"
         token = request.cookies.get('auth_token')
         hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+        id = uuid.uuid4()
         if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
             name = item["username"]
         chat_message = {
             "message": msg,
             "username": name,
+            "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0
         }
@@ -115,11 +123,55 @@ def add():
         response = make_response(jsonify({
             "message": msg,
             "username": name,
+            "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0
         }))
         response.status_code = 201
         return response
+
+@app.route("/like", methods=['GET','POST'])
+def like():
+    data = request.form
+    post_id = data.get("id")
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    name = "Guest"
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        chat_item = chat_collection.find_one({"auth_token":hashtoken,"_id":post_id})
+        name = item["username"]
+    chat_item["thumbsup"] += 1 
+    like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
+    response = make_response(jsonify({
+            "Post_id":post_id,
+            "LorD":"like",
+            "User":name,
+        }))
+    response.status_code = 201
+    return response 
+
+
+@app.route("/dislike", methods=['GET','POST'])
+def dislike():
+    data = request.form
+    post_id = data.get("id")
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    name = "Guest"
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        chat_item = chat_collection.find_one({"auth_token":hashtoken,"_id":post_id})
+        name = item["username"]
+    chat_item["thumbsdown"] += 1 
+    like_collection.insert_one({"Post_id":post_id,"LorD":"dislike","User":name})
+    response = make_response(jsonify({
+            "Post_id":post_id,
+            "LorD":"dislike",
+            "User":name,
+        }))
+    response.status_code = 201
+    return response 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
