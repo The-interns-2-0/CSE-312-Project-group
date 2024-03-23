@@ -11,7 +11,7 @@ app = Flask(__name__)
 #mongo_client = MongoClient("mongo")
 #db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -146,8 +146,9 @@ def like():
         item = auth_collection.find_one({"auth_token":hashtoken})
         chat_item = chat_collection.find_one({"_id":post_id})
         name = item["username"]
-    chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
-    like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
+    if like_collection.find_one({"User":name,"Post_id":post_id})==None:
+        chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
+        like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
     response = make_response(jsonify({
             "Post_id":post_id,
             "LorD":"like",
@@ -169,11 +170,12 @@ def dislike():
         item = auth_collection.find_one({"auth_token":hashtoken})
         chat_item = chat_collection.find_one({"_id":post_id})
         name = item["username"]
-    chat_collection.update_one({"_id":post_id},{"$set":{"thumbsdown":chat_item["thumbsdown"] + 1 }})
-    like_collection.insert_one({"Post_id":post_id,"LorD":"dislike","User":name})
+    if like_collection.find_one({"User":name,"Post_id":post_id})==None:
+        chat_collection.update_one({"_id":post_id},{"$set":{"thumbsdown":chat_item["thumbsdown"] + 1 }})
+        like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
     response = make_response(jsonify({
             "Post_id":post_id,
-            "LorD":"dislike",
+            "LorD":"like",
             "User":name,
         }))
     response.status_code = 201
