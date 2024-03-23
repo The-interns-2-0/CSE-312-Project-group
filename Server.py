@@ -11,7 +11,7 @@ app = Flask(__name__)
 #mongo_client = MongoClient("mongo")
 #db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
+mongo_client = MongoClient("mongo")
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -79,6 +79,8 @@ def get_data():
 def login():
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
+    if thisitem==None:
+        return abort(404)
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
         auth_token = uuid.uuid4()
         hashtoken = hashlib.sha256(str(auth_token).encode()).hexdigest()
@@ -97,7 +99,7 @@ def logout():
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
-        chat=list(chat_collection.find({},{"_id":0}))
+        chat=list(chat_collection.find({}))
         res=dumps(chat)
         return res
     if request.method == 'POST':
@@ -119,29 +121,32 @@ def add():
             "thumbsdown":0
         }
         chat_collection.insert_one(chat_message)
+        
 
         response = make_response(jsonify({
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
-            "thumbsdown":0
+            "thumbsdown":0,
+            "id" : str(id)
         }))
         response.status_code = 201
         return response
 
 @app.route("/like", methods=['GET','POST'])
 def like():
-    data = request.form
+    data = request.json
     post_id = data.get("id")
     token = request.cookies.get('auth_token')
+    # print(token)
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
     name = "Guest"
     if auth_collection.find_one({"auth_token":hashtoken})!= None:
         item = auth_collection.find_one({"auth_token":hashtoken})
-        chat_item = chat_collection.find_one({"auth_token":hashtoken,"_id":post_id})
+        chat_item = chat_collection.find_one({"_id":post_id})
         name = item["username"]
-    chat_item["thumbsup"] += 1 
+    chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
     like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
     response = make_response(jsonify({
             "Post_id":post_id,
@@ -154,16 +159,17 @@ def like():
 
 @app.route("/dislike", methods=['GET','POST'])
 def dislike():
-    data = request.form
+    data = request.json
     post_id = data.get("id")
     token = request.cookies.get('auth_token')
+    # print(token)
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
     name = "Guest"
     if auth_collection.find_one({"auth_token":hashtoken})!= None:
         item = auth_collection.find_one({"auth_token":hashtoken})
-        chat_item = chat_collection.find_one({"auth_token":hashtoken,"_id":post_id})
+        chat_item = chat_collection.find_one({"_id":post_id})
         name = item["username"]
-    chat_item["thumbsdown"] += 1 
+    chat_collection.update_one({"_id":post_id},{"$set":{"thumbsdown":chat_item["thumbsdown"] + 1 }})
     like_collection.insert_one({"Post_id":post_id,"LorD":"dislike","User":name})
     response = make_response(jsonify({
             "Post_id":post_id,
