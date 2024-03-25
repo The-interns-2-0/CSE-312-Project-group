@@ -1,29 +1,34 @@
-from flask import Flask,make_response,request,redirect,abort
+from flask import Flask,make_response,request,redirect,abort,jsonify
 from pymongo import MongoClient
 from json import dumps,loads
 import bcrypt
 import uuid
-import hashlib
 from html import escape
-import os
+import hashlib
+
 app = Flask(__name__)
 
-mongo_client = MongoClient("mongo")
-db = mongo_client['user_database']
+#mongo_client = MongoClient("mongo")
+#db = mongo_client['user_database']
 
-
+mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
+db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
+chat_collection = db['chat']
 
-message_collection = db['message_collection']
-
-
+#data base for like and dislikes
+like_collection=db["like_or_dislike"]
 @app.route("/", methods=['GET','POST'])
 def index():
     # if request.method == 'GET':
-        print("here")
         with open("./public/index.html","r") as file:
             file = file.read()
+            auth=request.cookies.get('auth_token')
+            # print(hashlib.sha256(str(auth).encode()).hexdigest())
+            # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
+            if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
+                file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -53,101 +58,128 @@ def fav():
         response.headers['Content-Type'] = 'text/css; charset=utf-8'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
-    
-# @app.route("/public/Image/egg.jpg")
-# def serve_file():
-#     print("-------------------------------")
-#     with open("./public/Image/egg.jpg", "rb") as file:
-#         file_content = file.read()
-#     response = make_response(file_content)
-#     response.headers['Content-Type'] = 'image/jpeg'
-#     response.headers['X-Content-Type-Options'] = 'nosniff'
-#     return response
-
-@app.route("/public/Image/<filename>")
-def serve_image(filename):
-    print("-------------------------------")
-    image_path = os.path.join("./public/Image", filename)
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as file:
-            file_content = file.read()
-        response = make_response(file_content)
-        response.headers['Content-Type'] = 'image/jpeg'
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        return response
-
-
-
-    
-
-
-
 @app.route("/register", methods=['GET','POST'])
+
 def get_data():
     data = request.form
+    # print("heres")
+    print(data)
     if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
+        print("colle")
         return abort(404)
     if data.get("reg_pass")!= data.get("conform_pass"):
+        print("pass")
         return abort(404)
     def hash_password(password):
         salt = bcrypt.gensalt()  
         return bcrypt.hashpw(password.encode(), salt)  
     collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"auth":""})
     return redirect("/",302)
-    
 @app.route("/login", methods=['GET','POST'])
 def login():
-    # print(request)
     data = request.form
     thisitem = collection.find_one({"username":data.get("login_user")})
+    if thisitem==None:
+        return abort(404)
     if bcrypt.checkpw(data.get("login_passs").encode(),thisitem["password"]) == True:
         auth_token = uuid.uuid4()
         hashtoken = hashlib.sha256(str(auth_token).encode()).hexdigest()
-        #at = 'auth_token='+str(auth_token)
         response = make_response(redirect('/',302))
         response.set_cookie('auth_token', str(auth_token),3600,httponly=True)
         response.headers['HttpOnly']='True'
-
+        auth_collection.delete_one({"username":data.get("login_user")})
         auth_collection.insert_one({"username":data.get("login_user"),"auth_token":hashtoken})
         return response
     return abort(404)
-
-
+@app.route("/logout", methods=['GET','POST'])
+def logout():
+    resp = make_response(redirect('/'))
+    resp.delete_cookie('auth_token')
+    return resp
 @app.route("/addchat", methods=['GET','POST'])
 def add():
-
     if request.method == 'GET':
-        return "ssssss"
+        chat=list(chat_collection.find({}))
+        res=dumps(chat)
+        return res
     if request.method == 'POST':
         data = request.json
         msg=data.get("chat")
         msg=escape(msg)
-        # auth=request.cookies.get('auth_token')
-
         name = "Guest"
-
-
-        token = request.cookies.get('auth_token','')
-    
+        token = request.cookies.get('auth_token')
         hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
-        
-        if token != '':
-            print("----------------------")
+        id = uuid.uuid4()
+        if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
             name = item["username"]
-            print(f"----->>>> {name}")
-
         chat_message = {
             "message": msg,
             "username": name,
-            
+            "_id" : str(id),
+            "thumbsup":0,
+            "thumbsdown":0
         }
-        message_collection.insert_one(chat_message)
+        chat_collection.insert_one(chat_message)
+        
 
-        return redirect("/",302)
+        response = make_response(jsonify({
+            "message": msg,
+            "username": name,
+            "_id" : str(id),
+            "thumbsup":0,
+            "thumbsdown":0,
+            "id" : str(id)
+        }))
+        response.status_code = 201
+        return response
+
+@app.route("/like", methods=['GET','POST'])
+def like():
+    data = request.json
+    post_id = data.get("id")
+    token = request.cookies.get('auth_token')
+    # print(token)
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    name = "Guest"
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        chat_item = chat_collection.find_one({"_id":post_id})
+        name = item["username"]
+    if like_collection.find_one({"User":name,"Post_id":post_id})==None:
+        chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
+        like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
+    response = make_response(jsonify({
+            "Post_id":post_id,
+            "LorD":"like",
+            "User":name,
+        }))
+    response.status_code = 201
+    return response 
 
 
+@app.route("/dislike", methods=['GET','POST'])
+def dislike():
+    data = request.json
+    post_id = data.get("id")
+    token = request.cookies.get('auth_token')
+    # print(token)
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    name = "Guest"
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        chat_item = chat_collection.find_one({"_id":post_id})
+        name = item["username"]
+    if like_collection.find_one({"User":name,"Post_id":post_id})==None:
+        chat_collection.update_one({"_id":post_id},{"$set":{"thumbsdown":chat_item["thumbsdown"] + 1 }})
+        like_collection.insert_one({"Post_id":post_id,"LorD":"like","User":name})
+    response = make_response(jsonify({
+            "Post_id":post_id,
+            "LorD":"like",
+            "User":name,
+        }))
+    response.status_code = 201
+    return response 
 
 if __name__ == '__main__':
-    #port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
