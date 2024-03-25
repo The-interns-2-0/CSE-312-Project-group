@@ -24,9 +24,10 @@
     background-color: #FFFAF1;
 }
 
-#chat-messages {
-    height: 90%;
-    overflow: scroll;
+.chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
 }
 
 .chat-input {
