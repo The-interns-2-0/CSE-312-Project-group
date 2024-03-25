@@ -5,11 +5,12 @@ import bcrypt
 import uuid
 from html import escape
 import hashlib
+import os
 
 app = Flask(__name__)
 
-#mongo_client = MongoClient("mongo")
-#db = mongo_client['user_database']
+# mongo_client = MongoClient("mongo")
+# db = mongo_client['user_database']
 
 mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
 db = mongo_client["mongo-1"]
@@ -58,6 +59,25 @@ def fav():
         response.headers['Content-Type'] = 'text/css; charset=utf-8'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
+    
+
+
+
+
+@app.route("/public/Image/<filename>")
+def serve_image(filename):
+    image_path = os.path.join("./public/Image", filename)
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as file:
+            file_content = file.read()
+        response = make_response(file_content)
+        response.headers['Content-Type'] = 'image/jpeg'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+
+
+
 @app.route("/register", methods=['GET','POST'])
 
 def get_data():
@@ -73,8 +93,10 @@ def get_data():
     def hash_password(password):
         salt = bcrypt.gensalt()  
         return bcrypt.hashpw(password.encode(), salt)  
-    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"auth":""})
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass"))})
     return redirect("/",302)
+
+
 @app.route("/login", methods=['GET','POST'])
 def login():
     data = request.form
