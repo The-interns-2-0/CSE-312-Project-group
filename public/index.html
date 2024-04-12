@@ -36,14 +36,20 @@
                 <input type="text" name ="login_user" title="login_user" placeholder="username" />
                 <input type="password" name="login_passs" title="login_passs" placeholder="password" />
                 <button type="submit"  class="btn">Login</button>
+                <div class="logout">
+                    <form action="/logout" method="post" enctype="application/x-www-form-urlencoded">
+                    <button type="submit"  class="btn">Logout</button>
+                    </form>
+                </div>
             </form>
             
-
-            <div class="logout">
-                <form action="/logout" method="post" enctype="application/x-www-form-urlencoded">
-                <button type="submit"  class="btn">Logout</button>
-                </form>
-            </div>
+            <form action="/upload-media" method="post" enctype="multipart/form-data">
+                <label>Upload Media:
+                    <input type="file" name="image">
+                    <input type="submit" value="Submit">
+                </label>
+             </form>
+            
             
         </div>
         <div class="guest-box">
