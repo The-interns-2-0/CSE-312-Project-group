@@ -18,6 +18,7 @@ collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
 
+
 #data base for like and dislikes
 like_collection=db["like_or_dislike"]
 @app.route("/", methods=['GET','POST'])
@@ -93,7 +94,10 @@ def get_data():
     def hash_password(password):
         salt = bcrypt.gensalt()  
         return bcrypt.hashpw(password.encode(), salt)  
-    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass"))})
+    #collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass"))})
+
+    #profile pic field
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"none"})
     return redirect("/",302)
 
 
@@ -202,6 +206,27 @@ def dislike():
         }))
     response.status_code = 201
     return response 
+
+#Create the path where new uploaded image is saved.
+UPLOAD_FOLDER = './public/Image'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route("/media-upload", method = ['GET','POST'])
+def upload():
+    #get auth_token 
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+
+    #uploading process
+    file = request.files['upload']
+    #img_name = "img" + str(uuid.uuid4())
+    path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(path)
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
+        name = item["username"]
+    return path
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
