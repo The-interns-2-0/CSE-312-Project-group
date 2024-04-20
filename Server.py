@@ -6,13 +6,15 @@ import uuid
 from html import escape
 import hashlib
 import os
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
+mongo_client = MongoClient("localhost")
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -207,26 +209,67 @@ def dislike():
     response.status_code = 201
     return response 
 
+
+
+@socketio.on('message')
+def handle_message(data):
+    msg=data.get("chat")
+    msg=escape(msg)
+    name = "Guest"
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    id = uuid.uuid4()
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        name = item["username"]
+    chat_message = {
+        "message": msg,
+        "username": name,
+        "_id" : str(id),
+        "thumbsup":0,
+        "thumbsdown":0
+    }
+    chat_collection.insert_one(chat_message)
+    response = {
+        "message": msg,
+        "username": name,
+        "_id" : str(id),
+        "thumbsup":0,
+        "thumbsdown":0,
+        "id" : str(id)
+    }
+
+    socketio.emit('response', response)  # Echo the message back to the client
+
+
+
+
+
+
 #Create the path where new uploaded image is saved.
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route("/media-upload", method = ['GET','POST'])
+@app.route("/upload-media", methods=['GET', 'POST'])
 def upload():
-    #get auth_token 
+    # Get auth_token
     token = request.cookies.get('auth_token')
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    print(token)
 
-    #uploading process
+    # Uploading process
     file = request.files['upload']
-    #img_name = "img" + str(uuid.uuid4())
+    print(file)
+    # Ensure the UPLOAD_FOLDER directory exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(path)
-    if auth_collection.find_one({"auth_token":hashtoken})!= None:
-        collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
-        name = item["username"]
-    return path
 
+    if auth_collection.find_one({"auth_token": hashtoken}) is not None:
+        print('in')
+        collection.update_one({"auth_token": hashtoken}, {"$set": {"profile_pic": file.filename}})
+
+    return redirect("/",302)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
+    app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)#debug=True
