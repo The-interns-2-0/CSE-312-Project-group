@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("localhost")
+mongo_client = MongoClient("mongo")
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
