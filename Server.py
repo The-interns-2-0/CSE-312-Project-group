@@ -211,21 +211,22 @@ def dislike():
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route("/media-upload", method = ['GET','POST'])
-def upload():
-    #get auth_token 
-    token = request.cookies.get('auth_token')
-    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+# @app.route("/media-upload", method = ['GET','POST'])
+# def upload():
+#     #get auth_token 
+#     token = request.cookies.get('auth_token')
+#     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
 
-    #uploading process
-    file = request.files['upload']
-    #img_name = "img" + str(uuid.uuid4())
-    path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(path)
-    if auth_collection.find_one({"auth_token":hashtoken})!= None:
-        collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
-        name = item["username"]
-    return path
+#     #uploading process
+#     file = request.files['upload']
+#     #img_name = "img" + str(uuid.uuid4())
+#     path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+#     file.save(path)
+#     if auth_collection.find_one({"auth_token":hashtoken})!= None:
+#         item = auth_collection.find_one({"auth_token":hashtoken})
+#         collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
+#         name = item["username"]
+#     return path
 
 
 if __name__ == '__main__':
