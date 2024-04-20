@@ -221,24 +221,6 @@ def dislike():
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-<<<<<<< HEAD
-# @app.route("/media-upload", method = ['GET','POST'])
-# def upload():
-#     #get auth_token 
-#     token = request.cookies.get('auth_token')
-#     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
-
-#     #uploading process
-#     file = request.files['upload']
-#     #img_name = "img" + str(uuid.uuid4())
-#     path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-#     file.save(path)
-#     if auth_collection.find_one({"auth_token":hashtoken})!= None:
-#         item = auth_collection.find_one({"auth_token":hashtoken})
-#         collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
-#         name = item["username"]
-#     return path
-=======
 @app.route("/upload-media", methods=['POST'])
 def upload():
     #get auth_token 
@@ -277,7 +259,6 @@ def upload():
        
             return redirect("/",302)
     return 401
->>>>>>> efeeb7b34954ab8b62927bff7a2623061b76699d
 
 
 if __name__ == '__main__':
