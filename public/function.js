@@ -26,7 +26,7 @@ function sendmsg() {
         // console.log(json);
         json.forEach(user_message => {
             // console.log(user_message);
-            messages.innerHTML+=`<span><b>${user_message.username}</b>: ${user_message.message}</span><br>`;
+            messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: ${user_message.message}</span><br>`;
             messages.innerHTML +=`<button onclick='thumbs_up(\"` + user_message._id + `\")'>👍</button>:${user_message.thumbsup}`;
             messages.innerHTML +=`<button onclick='thumbs_down(\"` + user_message._id + `\")'>👎</button>:${user_message.thumbsdown}<br>`;
             messages.scrollIntoView(false);
@@ -36,6 +36,7 @@ function sendmsg() {
     }
     )
 }
+
 function thumbs_up(id){
     const data = { id: id };
     fetch('/like', {

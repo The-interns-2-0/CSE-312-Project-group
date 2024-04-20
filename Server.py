@@ -67,7 +67,7 @@ def fav():
 
 @app.route("/public/Image/<filename>")
 def serve_image(filename):
-    image_path = os.path.join("./public/Image", filename)
+    image_path = os.path.join("./public/Image/", filename)
     if os.path.exists(image_path):
         with open(image_path, "rb") as file:
             file_content = file.read()
@@ -97,7 +97,7 @@ def get_data():
     #collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass"))})
 
     #profile pic field
-    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"none"})
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"./public/Image/yogurt.jpg"})
     return redirect("/",302)
 
 
@@ -122,6 +122,7 @@ def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth_token')
     return resp
+
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
@@ -139,12 +140,18 @@ def add():
         if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
             name = item["username"]
+        user_info= collection.find_one({"username":name})
+        profile_pic = "./public/Image/yogurt.jpg"
+        if user_info != None:
+            profile_pic = user_info["profile_pic"]
+
         chat_message = {
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
-            "thumbsdown":0
+            "thumbsdown":0,
+            "profile_pic": profile_pic
         }
         chat_collection.insert_one(chat_message)
         
@@ -155,7 +162,8 @@ def add():
             "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0,
-            "id" : str(id)
+            "id" : str(id),
+            "profile_pic": profile_pic
         }))
         response.status_code = 201
         return response
@@ -207,10 +215,13 @@ def dislike():
     response.status_code = 201
     return response 
 
-#Create the path where new uploaded image is saved.
+
+
+
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+<<<<<<< HEAD
 # @app.route("/media-upload", method = ['GET','POST'])
 # def upload():
 #     #get auth_token 
@@ -227,6 +238,46 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 #         collection.update_one({"auth_token":hashtoken},{"$set":{"profile_pic":file.filename }})
 #         name = item["username"]
 #     return path
+=======
+@app.route("/upload-media", methods=['POST'])
+def upload():
+    #get auth_token 
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+
+
+    # Check if the user is authenticated
+    if auth_collection.find_one({"auth_token": hashtoken}) is not None:
+        if 'upload' not in request.files:
+            return "No file part", 400
+        file = request.files['upload']
+        if file.filename == '':
+            return "No selected file", 400 
+        if file:
+            filename =  file.filename
+            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(path)
+            # Update the user's profile picture in the database
+            item = auth_collection.find_one({"auth_token": hashtoken})
+            #filename = "<img src=" + '"' +image_filename+ '" ' +  "class=" + '"'+ "m_image" +'"' +"/>"
+            name = item["username"]
+            collection.update_one({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
+
+            all_chat  = chat_collection.find({})
+            # print("lokokokokokokkokokookook")
+            for i in all_chat:
+                # print("----------------OOOOOOOOOO--------")
+                if i["username"] == name:
+                    # chat_collection.update
+                    chat_collection.update_one({"_id": i["_id"]}, {"$set": {"profile_pic": "./public/Image/" + filename}})
+
+
+
+            #chat_collection.updateMany({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
+       
+            return redirect("/",302)
+    return 401
+>>>>>>> efeeb7b34954ab8b62927bff7a2623061b76699d
 
 
 if __name__ == '__main__':
