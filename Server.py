@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("localhost")
 player=[]
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
@@ -37,16 +37,6 @@ def index():
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
             return response
-# @socketio.on('connect')
-# def handle_join_room():
-#     auth_token=request.cookies.get('auth_token')
-#     if auth_token:
-#         user = auth_collection.find_one({'auth_token': hashlib.sha256(str(auth_token).encode()).hexdigest()})
-#         if user:
-#             print(user)
-#             room = "room1"
-#             (join_room(room=room))
-#             socketio.emit('broadcast message', auth_token, room=room)
 
 @app.route("/functions.js")
 def func():
@@ -147,13 +137,17 @@ def add():
         token = request.cookies.get('auth_token')
         hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
         id = uuid.uuid4()
+        # print(hashtoken)
+        if auth_collection.find_one({"auth_token":hashtoken})!= None:
+            item = auth_collection.find_one({"auth_token":hashtoken})
+            print(item)
+            name = item["username"]
+        print(name)
         user_info= collection.find_one({"username":name})
         profile_pic = "./public/Image/yogurt.jpg"
         if user_info != None:
             profile_pic = user_info["profile_pic"]
-        if auth_collection.find_one({"auth_token":hashtoken})!= None:
-            item = auth_collection.find_one({"auth_token":hashtoken})
-            name = item["username"]
+        
         
         chat_message = {
             "message": msg,
@@ -250,13 +244,15 @@ def handle_message(data):
     token = request.cookies.get('auth_token')
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
     id = uuid.uuid4()
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        print(item)
+        name = item["username"]
+    print(name)
     user_info= collection.find_one({"username":name})
     profile_pic = "./public/Image/yogurt.jpg"
     if user_info != None:
         profile_pic = user_info["profile_pic"]
-    if auth_collection.find_one({"auth_token":hashtoken})!= None:
-        item = auth_collection.find_one({"auth_token":hashtoken})
-        name = item["username"]
     
     chat_message = {
         "message": msg,
@@ -277,6 +273,7 @@ def handle_message(data):
         "profile_pic":profile_pic
     }))
     print("emitted")
+    print(profile_pic)
     socketio.emit('response', response)  # Echo the message back to the client
     freq={}
     for x in chat_collection.find({}):
