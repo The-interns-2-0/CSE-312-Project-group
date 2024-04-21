@@ -6,20 +6,22 @@ import uuid
 from html import escape
 import hashlib
 import os
+from flask_socketio import SocketIO,join_room,send
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongodb://cse-312-project-group-mongo-1")
+mongo_client = MongoClient("mongo")
+player=[]
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
+private_collection=db['private']
 
-
-#data base for like and dislikes
 like_collection=db["like_or_dislike"]
 @app.route("/", methods=['GET','POST'])
 def index():
@@ -67,7 +69,7 @@ def fav():
 
 @app.route("/public/Image/<filename>")
 def serve_image(filename):
-    image_path = os.path.join("./public/Image/", filename)
+    image_path = os.path.join("./public/Image", filename)
     if os.path.exists(image_path):
         with open(image_path, "rb") as file:
             file_content = file.read()
@@ -75,8 +77,6 @@ def serve_image(filename):
         response.headers['Content-Type'] = 'image/jpeg'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
-
-
 
 
 @app.route("/register", methods=['GET','POST'])
@@ -97,7 +97,7 @@ def get_data():
     #collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass"))})
 
     #profile pic field
-    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"./public/Image/yogurt.jpg"})
+    collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"none"})
     return redirect("/",302)
 
 
@@ -122,12 +122,12 @@ def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth_token')
     return resp
-
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
         chat=list(chat_collection.find({}))
         res=dumps(chat)
+        print(res)
         return res
     if request.method == 'POST':
         data = request.json
@@ -137,6 +137,7 @@ def add():
         token = request.cookies.get('auth_token')
         hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
         id = uuid.uuid4()
+        # print(hashtoken)
         if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
             name = item["username"]
@@ -144,27 +145,28 @@ def add():
         profile_pic = "./public/Image/yogurt.jpg"
         if user_info != None:
             profile_pic = user_info["profile_pic"]
-
+        
+        
         chat_message = {
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0,
-            "profile_pic": profile_pic
+            "profile_pic":profile_pic
         }
         chat_collection.insert_one(chat_message)
-        
 
-        response = make_response(jsonify({
+        response = make_response(({
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0,
             "id" : str(id),
-            "profile_pic": profile_pic
+            "profile_pic":profile_pic
         }))
+        print(response)
         response.status_code = 201
         return response
 
@@ -214,6 +216,80 @@ def dislike():
         }))
     response.status_code = 201
     return response 
+@socketio.on('connect')
+def handle_connection():
+    freq={}
+    for x in chat_collection.find({}):
+      if x.get("username")!="Guest":
+        freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    print(freq)
+
+    sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
+
+    # Create a new dictionary with keys as "first", "second", and "third"
+    result_dict = {}
+    for i, (key, value) in enumerate(sorted_items):
+        result_dict[i + 1] = key
+    # print(result_dict)
+    socketio.emit('lead', result_dict)
+
+
+@socketio.on('message')
+def handle_message(data):
+    msg=data.get("chat")
+    msg=escape(msg)
+    name = "Guest"
+    token = request.cookies.get('auth_token')
+    hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
+    id = uuid.uuid4()
+    if auth_collection.find_one({"auth_token":hashtoken})!= None:
+        item = auth_collection.find_one({"auth_token":hashtoken})
+        print(item)
+        name = item["username"]
+    print(name)
+    user_info= collection.find_one({"username":name})
+    profile_pic = "./public/Image/yogurt.jpg"
+    if user_info != None:
+        profile_pic = user_info.get("profile_pic",profile_pic)
+        if profile_pic=="none":
+            profile_pic= "./public/Image/yogurt.jpg"
+    
+    chat_message = {
+        "message": msg,
+        "username": name,
+        "_id" : str(id),
+        "thumbsup":0,
+        "thumbsdown":0,
+        "profile_pic":profile_pic
+    }
+    chat_collection.insert_one(chat_message)
+
+    response = (({
+        "message": msg,
+        "username": name,
+        "_id" : str(id),
+        "thumbsup":0,
+        "thumbsdown":0,
+        "profile_pic":profile_pic
+    }))
+    print("emitted")
+    print(profile_pic)
+    socketio.emit('response', response)  # Echo the message back to the client
+    freq={}
+    for x in chat_collection.find({}):
+      if x.get("username")!="Guest":
+        freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    print(freq)
+
+    sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
+
+    # Create a new dictionary with keys as "first", "second", and "third"
+    result_dict = {}
+    for i, (key, value) in enumerate(sorted_items):
+        result_dict[i + 1] = key
+    # print(result_dict)
+    socketio.emit('lead', result_dict)
+
 
 
 
@@ -244,7 +320,6 @@ def upload():
             #filename = "<img src=" + '"' +image_filename+ '" ' +  "class=" + '"'+ "m_image" +'"' +"/>"
             name = item["username"]
             collection.update_one({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
-
             all_chat  = chat_collection.find({})
             # print("lokokokokokokkokokookook")
             for i in all_chat:
@@ -260,6 +335,5 @@ def upload():
             return redirect("/",302)
     return 401
 
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080,debug=True)#debug=True
+    app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)#debug=True
