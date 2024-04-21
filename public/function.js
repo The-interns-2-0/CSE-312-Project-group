@@ -1,7 +1,8 @@
 const messages = document.getElementById("chat-messages");
 const ws=true;
-var socket = io.connect('http://' + document.domain + ':' + location.port);
-// var room_name = socket.request.headers.referer;
+//var socket = io.connect('https://' + document.domain + ':' + location.port);
+var socket = io.connect('https://interns20.com')
+
 socket.on('connect', function() {
     console.log('Connected!');
 })
