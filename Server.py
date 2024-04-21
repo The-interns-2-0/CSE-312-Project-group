@@ -140,9 +140,7 @@ def add():
         # print(hashtoken)
         if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
-            print(item)
             name = item["username"]
-        print(name)
         user_info= collection.find_one({"username":name})
         profile_pic = "./public/Image/yogurt.jpg"
         if user_info != None:
@@ -252,7 +250,9 @@ def handle_message(data):
     user_info= collection.find_one({"username":name})
     profile_pic = "./public/Image/yogurt.jpg"
     if user_info != None:
-        profile_pic = user_info["profile_pic"]
+        profile_pic = user_info.get("profile_pic",profile_pic)
+        if profile_pic=="none":
+            profile_pic= "./public/Image/yogurt.jpg"
     
     chat_message = {
         "message": msg,
