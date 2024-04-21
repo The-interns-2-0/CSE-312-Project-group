@@ -3,6 +3,7 @@
     margin-top: 8px;
 }
 
+
 .slogan img {
     width: 100px; 
     height: auto;
@@ -27,8 +28,10 @@
 
 .container {
     display: flex;
+    width: 80%;
     width: 1400px; 
-    height: 650px; 
+    height: 750px; 
+    height: 80%;
     border: 1px solid #C6BFB6;
     border-radius: 5px;
     overflow: hidden;
@@ -94,6 +97,7 @@
     align-items: center;
 }
 
+
 .login-signup form input {
     margin-bottom: 20px;
     padding: 10px;
@@ -126,10 +130,12 @@
     border-radius: 5px;
 }
 .rank-box {
-  border: 1px solid #ccc;
+  border: 1px solid #8B6565;
+  background-color: #E67763;
   border-radius: 5px;
   padding: 10px;
-  width: 300px; /* Adjust the width as needed */
+  width: 80%;
+  width: 250px; 
   display: flex;
   flex-direction: column;
 }
@@ -140,7 +146,7 @@
 }
 
 .rank {
-  background-color: #007bff;
+  background-color: #FDDA9D;
   color: #fff;
   border-radius: 50%;
   width: 30px;
