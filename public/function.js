@@ -1,7 +1,7 @@
 const messages = document.getElementById("chat-messages");
 const ws=true;
 //var socket = io.connect('https://' + document.domain + ':' + location.port);
-var socket = io.connect('https://interns20.com')
+var socket = io.connect('https://interns20.com:8080')
 
 socket.on('connect', function() {
     console.log('Connected!');
