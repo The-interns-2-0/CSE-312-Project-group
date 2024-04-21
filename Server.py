@@ -137,6 +137,7 @@ def add():
     if request.method == 'GET':
         chat=list(chat_collection.find({}))
         res=dumps(chat)
+        print(res)
         return res
     if request.method == 'POST':
         data = request.json
@@ -146,27 +147,34 @@ def add():
         token = request.cookies.get('auth_token')
         hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
         id = uuid.uuid4()
+        user_info= collection.find_one({"username":name})
+        profile_pic = "./public/Image/yogurt.jpg"
+        if user_info != None:
+            profile_pic = user_info["profile_pic"]
         if auth_collection.find_one({"auth_token":hashtoken})!= None:
             item = auth_collection.find_one({"auth_token":hashtoken})
             name = item["username"]
+        
         chat_message = {
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
-            "thumbsdown":0
+            "thumbsdown":0,
+            "profile_pic":profile_pic
         }
         chat_collection.insert_one(chat_message)
-        
 
-        response = make_response(jsonify({
+        response = make_response(({
             "message": msg,
             "username": name,
             "_id" : str(id),
             "thumbsup":0,
             "thumbsdown":0,
-            "id" : str(id)
+            "id" : str(id),
+            "profile_pic":profile_pic
         }))
+        print(response)
         response.status_code = 201
         return response
 
@@ -230,7 +238,7 @@ def handle_connection():
     result_dict = {}
     for i, (key, value) in enumerate(sorted_items):
         result_dict[i + 1] = key
-    print(result_dict)
+    # print(result_dict)
     socketio.emit('lead', result_dict)
 
 
@@ -242,37 +250,48 @@ def handle_message(data):
     token = request.cookies.get('auth_token')
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
     id = uuid.uuid4()
+    user_info= collection.find_one({"username":name})
+    profile_pic = "./public/Image/yogurt.jpg"
+    if user_info != None:
+        profile_pic = user_info["profile_pic"]
     if auth_collection.find_one({"auth_token":hashtoken})!= None:
         item = auth_collection.find_one({"auth_token":hashtoken})
         name = item["username"]
+    
     chat_message = {
         "message": msg,
         "username": name,
         "_id" : str(id),
         "thumbsup":0,
-        "thumbsdown":0
+        "thumbsdown":0,
+        "profile_pic":profile_pic
     }
     chat_collection.insert_one(chat_message)
-    response = {
+
+    response = (({
         "message": msg,
         "username": name,
         "_id" : str(id),
         "thumbsup":0,
-        "thumbsdown":0
-    }
-    freq={}
+        "thumbsdown":0,
+        "profile_pic":profile_pic
+    }))
+    print("emitted")
     socketio.emit('response', response)  # Echo the message back to the client
+    freq={}
     for x in chat_collection.find({}):
-        if x.get("username")!="Guest":
-            freq[x.get("username")]=freq.get(x.get("username"),0)+1
+      if x.get("username")!="Guest":
+        freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    print(freq)
+
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
+
     # Create a new dictionary with keys as "first", "second", and "third"
     result_dict = {}
     for i, (key, value) in enumerate(sorted_items):
         result_dict[i + 1] = key
-    print(result_dict)
+    # print(result_dict)
     socketio.emit('lead', result_dict)
-
 
 
 
