@@ -1,11 +1,15 @@
 const messages = document.getElementById("chat-messages");
 const ws=true;
 var socket = io.connect('http://' + document.domain + ':' + location.port);
+// var room_name = socket.request.headers.referer;
 socket.on('connect', function() {
     console.log('Connected!');
+    // socket.emit('connect');
 })
+
 socket.on('response', function(user_message) {
     console.log(user_message);
+    messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: ${user_message.message}</span><br>`;
     messages.innerHTML+=`<span><b>${user_message.username}</b>: ${user_message.message}</span><br>`;
     messages.innerHTML +=`<button onclick='thumbs_up(\"` + user_message._id + `\")'>👍</button>:${user_message.thumbsup}`;
     messages.innerHTML +=`<button onclick='thumbs_down(\"` + user_message._id + `\")'>👎</button>:${user_message.thumbsdown}<br>`;
@@ -13,11 +17,22 @@ socket.on('response', function(user_message) {
     const chatMessages = document.getElementById("chatbox");
     chatMessages.value = "";
 });
+socket.on('lead', function(top) {
+    fir=document.getElementById("1");
+    sec=document.getElementById("2");
+    thi=document.getElementById("3");
+    fir.innerHTML = top[1] !== null ? top[1] : "None";
+    sec.innerHTML = top[2] !== null ? top[2] : "None";
+    thi.innerHTML = top[3] !== null ? top[3] : "None";
+
+});
+
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     const data = { chat: chat };
     if (ws){
         socket.emit('message', data);
+        socket.emit('update');
     }else{
     fetch('/addchat', {
         method: 'POST',
@@ -37,18 +52,12 @@ function addchat() {
 }
 function sendmsg() {
     messages.innerHTML = "";
-    // if (ws){
-    //     var message = document.getElementById('message').value;
-    //     socket.emit('message', message);
-
-    // }else{
-        
     fetch('/addchat')
     .then(response => response.json())
     .then(json => {
         // console.log(json);
         json.forEach(user_message => {
-            messages.innerHTML+=`<span><b>${user_message.username}</b>: ${user_message.message}</span><br>`;
+            messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: ${user_message.message}</span><br>`;
             messages.innerHTML +=`<button onclick='thumbs_up(\"` + user_message._id + `\")'>👍</button>:${user_message.thumbsup}`;
             messages.innerHTML +=`<button onclick='thumbs_down(\"` + user_message._id + `\")'>👎</button>:${user_message.thumbsdown}<br>`;
             messages.scrollIntoView(false);

@@ -6,7 +6,7 @@ import uuid
 from html import escape
 import hashlib
 import os
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO,join_room,send
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -14,14 +14,14 @@ socketio = SocketIO(app)
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("localhost")
+player=[]
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
+private_collection=db['private']
 
-
-#data base for like and dislikes
 like_collection=db["like_or_dislike"]
 @app.route("/", methods=['GET','POST'])
 def index():
@@ -37,6 +37,16 @@ def index():
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
             return response
+# @socketio.on('connect')
+# def handle_join_room():
+#     auth_token=request.cookies.get('auth_token')
+#     if auth_token:
+#         user = auth_collection.find_one({'auth_token': hashlib.sha256(str(auth_token).encode()).hexdigest()})
+#         if user:
+#             print(user)
+#             room = "room1"
+#             (join_room(room=room))
+#             socketio.emit('broadcast message', auth_token, room=room)
 
 @app.route("/functions.js")
 def func():
@@ -77,8 +87,6 @@ def serve_image(filename):
         response.headers['Content-Type'] = 'image/jpeg'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
-
-
 
 
 @app.route("/register", methods=['GET','POST'])
@@ -208,7 +216,22 @@ def dislike():
         }))
     response.status_code = 201
     return response 
+@socketio.on('connect')
+def handle_connection():
+    freq={}
+    for x in chat_collection.find({}):
+      if x.get("username")!="Guest":
+        freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    print(freq)
 
+    sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
+
+    # Create a new dictionary with keys as "first", "second", and "third"
+    result_dict = {}
+    for i, (key, value) in enumerate(sorted_items):
+        result_dict[i + 1] = key
+    print(result_dict)
+    socketio.emit('lead', result_dict)
 
 
 @socketio.on('message')
@@ -235,41 +258,66 @@ def handle_message(data):
         "username": name,
         "_id" : str(id),
         "thumbsup":0,
-        "thumbsdown":0,
-        "id" : str(id)
+        "thumbsdown":0
     }
-
+    freq={}
     socketio.emit('response', response)  # Echo the message back to the client
+    for x in chat_collection.find({}):
+        if x.get("username")!="Guest":
+            freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
+    # Create a new dictionary with keys as "first", "second", and "third"
+    result_dict = {}
+    for i, (key, value) in enumerate(sorted_items):
+        result_dict[i + 1] = key
+    print(result_dict)
+    socketio.emit('lead', result_dict)
 
 
 
 
 
 
-#Create the path where new uploaded image is saved.
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route("/upload-media", methods=['GET', 'POST'])
+@app.route("/upload-media", methods=['POST'])
 def upload():
-    # Get auth_token
+    #get auth_token 
     token = request.cookies.get('auth_token')
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
-    print(token)
 
-    # Uploading process
-    file = request.files['upload']
-    print(file)
-    # Ensure the UPLOAD_FOLDER directory exists
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(path)
 
+    # Check if the user is authenticated
     if auth_collection.find_one({"auth_token": hashtoken}) is not None:
-        print('in')
-        collection.update_one({"auth_token": hashtoken}, {"$set": {"profile_pic": file.filename}})
+        if 'upload' not in request.files:
+            return "No file part", 400
+        file = request.files['upload']
+        if file.filename == '':
+            return "No selected file", 400 
+        if file:
+            filename =  file.filename
+            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(path)
+            # Update the user's profile picture in the database
+            item = auth_collection.find_one({"auth_token": hashtoken})
+            #filename = "<img src=" + '"' +image_filename+ '" ' +  "class=" + '"'+ "m_image" +'"' +"/>"
+            name = item["username"]
+            collection.update_one({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
+            all_chat  = chat_collection.find({})
+            # print("lokokokokokokkokokookook")
+            for i in all_chat:
+                # print("----------------OOOOOOOOOO--------")
+                if i["username"] == name:
+                    # chat_collection.update
+                    chat_collection.update_one({"_id": i["_id"]}, {"$set": {"profile_pic": "./public/Image/" + filename}})
 
-    return redirect("/",302)
+
+
+            #chat_collection.updateMany({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
+       
+            return redirect("/",302)
+    return 401
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)#debug=True
