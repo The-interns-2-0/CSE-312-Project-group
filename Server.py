@@ -36,6 +36,7 @@ def index():
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
+            response.headers['Access-Control-Allow-Origin'] = '*'
             return response
 
 @app.route("/functions.js")
@@ -327,13 +328,9 @@ def upload():
                 if i["username"] == name:
                     # chat_collection.update
                     chat_collection.update_one({"_id": i["_id"]}, {"$set": {"profile_pic": "./public/Image/" + filename}})
-
-
-
-            #chat_collection.updateMany({"username": name}, {"$set": {"profile_pic": "./public/Image/" + filename}})
-       
             return redirect("/",302)
     return 401
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)#debug=True
+    socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
+    # app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)
