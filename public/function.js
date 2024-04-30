@@ -23,8 +23,14 @@ socket.on('lead', function(top) {
     fir.innerHTML = top[1]  ? top[1] : "None";
     sec.innerHTML = top[2]  ? top[2] : "None";
     thi.innerHTML = top[3]  ? top[3] : "None";
-
 });
+
+socket.on('schedule', function(){
+    const time= document.getElementById("sec");
+    if (time > 0 && time.isNumber()){
+        console.log(time);
+    }
+})
 
 function addchat() {
     const chat = document.getElementById("chatbox").value;
@@ -38,8 +44,8 @@ function addchat() {
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
@@ -72,14 +78,14 @@ function thumbs_up(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-    
+
     ;
 }
 
@@ -90,13 +96,13 @@ function thumbs_down(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-    
+
     ;
 }
