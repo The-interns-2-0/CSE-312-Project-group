@@ -6,7 +6,7 @@ import uuid
 from html import escape
 import hashlib
 import os
-from flask_socketio import SocketIO,join_room,send
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("localhost")
 player=[]
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
@@ -64,9 +64,6 @@ def fav():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
     
-
-
-
 
 @app.route("/public/Image/<filename>")
 def serve_image(filename):
@@ -146,8 +143,7 @@ def add():
         profile_pic = "./public/Image/yogurt.jpg"
         if user_info != None:
             profile_pic = user_info["profile_pic"]
-        
-        
+    
         chat_message = {
             "message": msg,
             "username": name,
@@ -167,7 +163,7 @@ def add():
             "id" : str(id),
             "profile_pic":profile_pic
         }))
-        print(response)
+        # print(response)
         response.status_code = 201
         return response
 
@@ -263,24 +259,46 @@ def handle_message(data):
         "thumbsdown":0,
         "profile_pic":profile_pic
     }
-    chat_collection.insert_one(chat_message)
-
     response = (({
-        "message": msg,
-        "username": name,
-        "_id" : str(id),
-        "thumbsup":0,
-        "thumbsdown":0,
-        "profile_pic":profile_pic
-    }))
-    print("emitted")
-    print(profile_pic)
-    socketio.emit('response', response)  # Echo the message back to the client
+            "message": msg,
+            "username": name,
+            "_id" : str(id),
+            "thumbsup":0,
+            "thumbsdown":0,
+            "profile_pic":profile_pic
+        }))
+    delay=int(data.get("sec"))
+    def post_scheduler( delay):
+        while delay > 0:
+            print(delay)
+            delay_msg = {
+                "message": delay,
+                "username": name,
+                "_id" : str(id),
+                "thumbsup":0,
+                "thumbsdown":0,
+                "profile_pic":profile_pic
+            }
+            socketio.emit('response', delay_msg)
+            delay -= 1
+            socketio.sleep(1)
+        chat_collection.insert_one(chat_message)
+        socketio.emit('response', response)
+    print("overhere")
+    if delay>0:
+        socketio.start_background_task(post_scheduler, delay)
+    else:
+        chat_collection.insert_one(chat_message)
+
+        print("emitted")
+        print(profile_pic)
+
+        socketio.emit('response', response)  # Echo the message back to the client
     freq={}
     for x in chat_collection.find({}):
       if x.get("username")!="Guest":
         freq[x.get("username")]=freq.get(x.get("username"),0)+1
-    print(freq)
+    # print(freq)
 
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
 
@@ -303,8 +321,6 @@ def upload():
     #get auth_token 
     token = request.cookies.get('auth_token')
     hashtoken = hashlib.sha256(str(token).encode()).hexdigest()
-
-
     # Check if the user is authenticated
     if auth_collection.find_one({"auth_token": hashtoken}) is not None:
         if 'upload' not in request.files:
@@ -332,5 +348,5 @@ def upload():
     return 401
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
+    socketio.run(app, host='0.0.0.0', port=8080)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
     # app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)
