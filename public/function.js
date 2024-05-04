@@ -8,13 +8,19 @@ socket.on('connect', function() {
 })
 
 socket.on('response', function(user_message) {
-    console.log(user_message);
-    messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: ${user_message.message}</span><br>`;
+    const id=document.getElementById(user_message._id)
+    if (id){
+        id.innerHTML=id.innerHTML.replace(id.innerHTML,user_message.message)
+        return
+    }
+
+    messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>:  <span id=${user_message._id}>${user_message.message}</span></span><br>`;
     messages.innerHTML +=`<button onclick='thumbs_up(\"` + user_message._id + `\")'>👍</button>:${user_message.thumbsup}`;
     messages.innerHTML +=`<button onclick='thumbs_down(\"` + user_message._id + `\")'>👎</button>:${user_message.thumbsdown}<br>`;
     messages.scrollIntoView(false);
     const chatMessages = document.getElementById("chatbox");
     chatMessages.value = "";
+    
 });
 socket.on('lead', function(top) {
     fir=document.getElementById("1");
@@ -24,19 +30,20 @@ socket.on('lead', function(top) {
     sec.innerHTML = top[2]  ? top[2] : "None";
     thi.innerHTML = top[3]  ? top[3] : "None";
 });
-
-socket.on('schedule', function(){
-    const time= document.getElementById("sec");
-    if (time > 0 && time.isNumber()){
-        console.log(time);
-    }
-})
-
+socket.on('getmessage', function(allmsg) {
+    
+});
 function addchat() {
     const chat = document.getElementById("chatbox").value;
-    const data = { chat: chat };
+    var sec = document.getElementById("sec").value;
+    if (!sec){
+        sec=0;
+    }
+    const data = { chat: chat,sec: sec};
+    console.log(sec);
     if (ws){
         socket.emit('message', data);
+
     }
     else{
     fetch('/addchat', {
@@ -44,8 +51,8 @@ function addchat() {
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
@@ -60,7 +67,7 @@ function sendmsg() {
     .then(response => response.json())
     .then(json => {
         json.forEach(user_message => {
-            messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: ${user_message.message}</span><br>`;
+            messages.innerHTML += `<span><b><img src="${user_message.profile_pic}" height="20px" width="20px">${user_message.username}</b>: <span id=${user_message._id}>${user_message.message}</span></span><br>`;
             messages.innerHTML +=`<button onclick='thumbs_up(\"` + user_message._id + `\")'>👍</button>:${user_message.thumbsup}`;
             messages.innerHTML +=`<button onclick='thumbs_down(\"` + user_message._id + `\")'>👎</button>:${user_message.thumbsdown}<br>`;
             messages.scrollIntoView(false);
@@ -78,14 +85,14 @@ function thumbs_up(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-
+    
     ;
 }
 
@@ -96,13 +103,21 @@ function thumbs_down(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-
+    
     ;
 }
+// document.addEventListener('DOMContentLoaded', function() {
+//     function sendHeartbeat() {
+//         socket.emit('loadmessage');
+//     }
+
+//     // Send heartbeat every second
+//     setInterval(sendHeartbeat, 1000);
+// });
