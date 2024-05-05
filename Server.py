@@ -11,10 +11,10 @@ from random import randrange
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-# mongo_client = MongoClient("mongo")
+mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("localhost")
+# mongo_client = MongoClient("localhost")
 player=[]
 global gamenumber,left,right
 gamenumber=-1
@@ -24,6 +24,7 @@ db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
+LastWinner = db['winner']
 private_collection=db['private']
 
 like_collection=db["like_or_dislike"]
@@ -280,7 +281,17 @@ def handle_guess(data):
         right = guess - 1
         ranges= {'left': left, 'right': right}
     else:
+
+        # last_list = LastWinner.find({})
+        
+        if LastWinner.find_one({"player":"player"})== None:
+            LastWinner.insert_one({"player": "player", "playerName": session_ids[request.sid]})
+        else:
+            # chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
+            LastWinner.update_one({"player": "player"}, {"$set":{ "playerName": session_ids[request.sid]}})
+
         socketio.emit('end',{"player":session_ids[request.sid]})
+        
         #session_ids[request.sid] to database
         player=[]
         gamenumber=-1
@@ -416,6 +427,22 @@ def upload():
                     chat_collection.update_one({"_id": i["_id"]}, {"$set": {"profile_pic": "./public/Image/" + filename}})
             return redirect("/",302)
     return 401
+
+
+@app.route("/winner")
+def winnerBegin():
+    winner_document = LastWinner.find_one({})
+    
+    if winner_document:
+        player_name = winner_document.get("playerName")
+        if player_name:
+            winner = {"name": player_name}
+            return jsonify(winner)
+    
+    default_winner = {"name": "No winner yet"}
+    return jsonify(default_winner)
+
+
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')

@@ -130,12 +130,12 @@ function sendmsg() {
         });
     }
     )
-    // fetch('/winner')
-    // .then(response => response.json())
-    // .then(player => {
-    //     document.getElementById("winner").innerHTML=player
-    // }
-    // )
+    fetch('/winner')
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.name);
+        document.getElementById("winner-name").innerHTML = data.name;
+    });
 
 }
 function thumbs_up(id){
