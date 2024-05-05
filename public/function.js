@@ -34,9 +34,12 @@ socket.on('error', function(top) {
     document.getElementById('content').innerHTML = 
     '<h1>Error 429 - Too Many Requests</h1>'
 });
-socket.on('getmessage', function(allmsg) {
+socket.on('start', function(player) {
     
 });
+function startgame() {
+    socket.emit('start');
+}
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     var sec = document.getElementById("sec").value;

@@ -7,7 +7,7 @@ from html import escape
 import hashlib
 import os
 from flask_socketio import SocketIO
-
+from random import randrange
 app = Flask(__name__)
 socketio = SocketIO(app)
 
@@ -16,6 +16,10 @@ socketio = SocketIO(app)
 
 mongo_client = MongoClient("localhost")
 player=[]
+global gamenumber,left,right
+gamenumber=-1
+left=0
+right=100
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -29,9 +33,9 @@ blocked_ips = {}
 session_ids={}
 @app.route("/", methods=['GET','POST'])
 def index():
-        
         client_ip = request.remote_addr
-        if  ip_requests[client_ip]:
+        print(ip_requests.get(client_ip))
+        if  ip_requests.get(client_ip):
             ip_requests[client_ip] = {'count': ip_requests[client_ip].get("count")+5, 'times': time.time()}
         else:
             ip_requests[client_ip] = {'count': 5, 'times': time.time()}
@@ -42,7 +46,7 @@ def index():
             # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
             if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
                 file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
-                session_ids[auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")] = request.sid
+                session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -88,11 +92,8 @@ def serve_image(filename):
 
 
 @app.route("/register", methods=['GET','POST'])
-
 def get_data():
     data = request.form
-    # print("heres")
-    print(data)
     if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
         print("colle")
         return abort(404)
@@ -239,7 +240,15 @@ def handle_connection():
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
-
+    
+@socketio.on('start')
+def handle_connection():
+    if not player:
+        global gamenumber
+        gamenumber=randrange(0,100)
+    player.append(request.sid)
+    result_dict={"left":left,"right":right}
+    socketio.emit('start', result_dict)
 @socketio.on('message')
 def handle_message(data):
     client_ip = request.remote_addr
@@ -366,5 +375,5 @@ def upload():
     return 401
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
+    socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
     # app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)

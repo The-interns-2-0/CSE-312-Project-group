@@ -11,7 +11,6 @@
 </head>
 
 <body onload="sendmsg();">
-    <div id="content">
     <div class="container">
         <div class="rank-box">
         <div class="rank-item">Most active User!</div>
@@ -43,6 +42,19 @@
                 <input type="number" id="sec" placeholder="type delay second" min="0" step="1">sec
             </div>
             <p>Please be careful with the words you use when speaking online❤️. Please register before posting.</p>
+            <div>
+                <div id="game-container">
+                    <input type="number" id="guess-number">
+                    <button id="start-game-btn">Start Game</button><br>
+                    Guess a number between 
+                    <spam id="left">0</spam>
+                    to 
+                    <spam id="right">100</spam><br>
+                    <spam id="gameinfo">The game has not started yet</spam>
+                </div>
+
+                <script src="functions.js"></script>
+            </div>
         </div>
         <div class="login-signup">
 
@@ -84,7 +96,6 @@
             Guest
         </div>
     </div>
-</div>
     
 
     <script src="functions.js"></script>
