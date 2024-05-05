@@ -34,9 +34,20 @@ socket.on('error', function(top) {
     document.getElementById('content').innerHTML = 
     '<h1>Error 429 - Too Many Requests</h1>'
 });
-socket.on('start', function(player) {
-    
+socket.on('start', function(data) {
+    const left=data.left
+    const right=data.right
+    document.getElementById("gameinfo").innerHTML="You are in the game"
+
 });
+socket.on('end', function(data) {
+    const left="x"
+    const right="x"
+    document.getElementById("gameinfo").innerHTML="The game has ended"
+    document.getElementById("winner").innerHTML=data.player
+});
+
+
 function startgame() {
     socket.emit('start');
 }
@@ -81,6 +92,12 @@ function sendmsg() {
             const chatMessages = document.getElementById("chatbox");
             chatMessages.innerHTML = "";
         });
+    }
+    )
+    fetch('/winner')
+    .then(response => response.json())
+    .then(player => {
+        document.getElementById("winner").innerHTML=player
     }
     )
 
