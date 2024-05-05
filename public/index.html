@@ -49,11 +49,13 @@
             <p>Please be careful with the words you use when speaking online❤️. Please register before posting.</p>
             <div>
                 <div id="game-container">
-                    <button id="start-game-btn">Start Game</button>
-                    <p id="range">Guess a number from {{ start }} to {{ end }}</p>
-                    Enter: <input type="number" id="guess-number">
-                    <button onclick="check_number()">Submit</button>
-                    <div id="winner"></div>
+                    <input type="number" id="guess-number">
+                    <button onclick="startgame()" id="start-game-btn">Start Game</button><br>
+                    Guess a number between 
+                    <span id="left">0</span>
+                    to 
+                    <span id="right">100</span><br>
+                    <span id="gameinfo">The game has not started yet</span>
                 </div>
 
                 <script src="functions.js"></script>

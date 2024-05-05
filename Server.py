@@ -7,7 +7,7 @@ from html import escape
 import hashlib
 import os
 from flask_socketio import SocketIO
-
+from random import randrange
 app = Flask(__name__)
 socketio = SocketIO(app)
 
@@ -16,6 +16,10 @@ socketio = SocketIO(app)
 
 mongo_client = MongoClient("localhost")
 player=[]
+global gamenumber,left,right
+gamenumber=-1
+left=0
+right=100
 db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
@@ -23,9 +27,18 @@ chat_collection = db['chat']
 private_collection=db['private']
 
 like_collection=db["like_or_dislike"]
+import time
+ip_requests = {}
+blocked_ips = {}
+session_ids={}
 @app.route("/", methods=['GET','POST'])
 def index():
-    # if request.method == 'GET':
+        client_ip = request.remote_addr
+        print(ip_requests.get(client_ip))
+        if  ip_requests.get(client_ip):
+            ip_requests[client_ip] = {'count': ip_requests[client_ip].get("count")+5, 'times': time.time()}
+        else:
+            ip_requests[client_ip] = {'count': 5, 'times': time.time()}
         with open("./public/index.html","r") as file:
             file = file.read()
             auth=request.cookies.get('auth_token')
@@ -33,6 +46,7 @@ def index():
             # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
             if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
                 file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
+                
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -78,11 +92,8 @@ def serve_image(filename):
 
 
 @app.route("/register", methods=['GET','POST'])
-
 def get_data():
     data = request.form
-    # print("heres")
-    print(data)
     if collection.find_one({"username":escape(data.get("reg_user"))})!=None:
         print("colle")
         return abort(404)
@@ -120,6 +131,7 @@ def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth_token')
     return resp
+
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
@@ -213,13 +225,18 @@ def dislike():
         }))
     response.status_code = 201
     return response 
+
 @socketio.on('connect')
 def handle_connection():
     freq={}
     for x in chat_collection.find({}):
       if x.get("username")!="Guest":
         freq[x.get("username")]=freq.get(x.get("username"),0)+1
-    print(freq)
+    global session_ids
+    auth=request.cookies.get('auth_token')
+    if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
+        session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
+    # print(freq)
 
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
 
@@ -230,9 +247,70 @@ def handle_connection():
     # print(result_dict)
     socketio.emit('lead', result_dict)
 
+@socketio.on('start')
+def handle_start():
+    if request.sid not in session_ids:
+        socketio.emit('guesterror',room=request.sid)
+        return
+    if not player:
+        global gamenumber
+        gamenumber=randrange(0,100)
+    users=[]
+    print(player)
+    print(request.sid)
+    for play in player:
+        users.append(session_ids[play])
+        socketio.emit('join', {"user":session_ids[request.sid]},room=play)
+    result_dict={"left":left,"right":right,"users":users}
+    print(result_dict)
+    socketio.emit('start', result_dict,room=request.sid)
+    player.append(request.sid)
+    
+@socketio.on('guess')
+def handle_guess(data):
+    print(data)
+    guess=int(data.get("number"))
+    ranges={}
+    global left, right, gamenumber,player
+    if guess < gamenumber:
+        left = guess + 1
+        ranges= {'left': left, 'right': right}
+    elif guess > gamenumber:
+        right = guess - 1
+        ranges= {'left': left, 'right': right}
+    else:
+        socketio.emit('end',{"player":session_ids[request.sid]})
+        player=[]
+        gamenumber=-1
+        left=0
+        right=100
+    ranges["player"]=session_ids[request.sid]
+    ranges["number"]=guess
+    for play in player:
+        socketio.emit('continue', ranges,room=play)
+
 
 @socketio.on('message')
 def handle_message(data):
+    client_ip = request.remote_addr
+    print(ip_requests[client_ip]['count'])
+    if client_ip in blocked_ips:
+        if time.time() - blocked_ips[client_ip] >= 30:
+            del blocked_ips[client_ip] 
+        else:
+            socketio.emit('error','Too Many Requests. Please try again later.')
+            return
+    if client_ip in ip_requests:
+        if ip_requests[client_ip]['times'] < time.time() - 10:
+            ip_requests[client_ip] = {'count': 1, 'times': time.time()}
+        else:
+            ip_requests[client_ip]['count'] += 1
+            if ip_requests[client_ip]['count'] > 50:
+                blocked_ips[client_ip] = time.time() 
+                socketio.emit('error', 'Too Many Requests. Please try again later.')
+                return 
+    else:
+        ip_requests[client_ip] = {'count': 1, 'times': time.time()}
     msg=data.get("chat")
     msg=escape(msg)
     name = "Guest"
@@ -241,9 +319,8 @@ def handle_message(data):
     id = uuid.uuid4()
     if auth_collection.find_one({"auth_token":hashtoken})!= None:
         item = auth_collection.find_one({"auth_token":hashtoken})
-        print(item)
+        # print(item)
         name = item["username"]
-    print(name)
     user_info= collection.find_one({"username":name})
     profile_pic = "./public/Image/yogurt.jpg"
     if user_info != None:
@@ -284,15 +361,10 @@ def handle_message(data):
             socketio.sleep(1)
         chat_collection.insert_one(chat_message)
         socketio.emit('response', response)
-    print("overhere")
     if delay>0:
         socketio.start_background_task(post_scheduler, delay)
     else:
         chat_collection.insert_one(chat_message)
-
-        print("emitted")
-        print(profile_pic)
-
         socketio.emit('response', response)  # Echo the message back to the client
     freq={}
     for x in chat_collection.find({}):
@@ -308,10 +380,6 @@ def handle_message(data):
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
-
-
-
-
 
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -348,5 +416,5 @@ def upload():
     return 401
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8080)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
+    socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')
     # app.run(host='0.0.0.0', port=8080,debug=True,threaded=True)

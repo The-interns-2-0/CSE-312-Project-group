@@ -30,40 +30,57 @@ socket.on('lead', function(top) {
     sec.innerHTML = top[2]  ? top[2] : "None";
     thi.innerHTML = top[3]  ? top[3] : "None";
 });
-socket.on('getmessage', function(allmsg) {
-    
+socket.on('error', function(top) {
+    document.getElementById('content').innerHTML = 
+    '<h1>Error 429 - Too Many Requests</h1>'
 });
-socket.on('player', function(player_list){
-    const player= document.getElementById(("userlist"));
-    player.innerHTML = '';
-    console.log(player_list);
-    player.forEach(user => {
-        const each = document.createElement('div');
-        player.textContent = user;
-        player.appendChild(each);
-    })
-})
-const range_num = document.getElementById("range").textContent;
+socket.on('start', function(data) {
+    const left=data.left
+    const right=data.right
+    document.getElementById("gameinfo").innerHTML="You are in the game"
+    const playerlist=document.getElementById("user_list")
+    data.users.forEach(
+        user =>
 
-// Regular expression to match placeholders
-var placeholderRegex = /{{(.*?)}}/g;
+        playerlist.innerHTML+=user+"<br>"
+    )
+    document.getElementById("start-game-btn").innerHTML="Guess number"
+    document.getElementById("start-game-btn").setAttribute("onclick", "guess()");
+});
+socket.on('continue', function(data) {
+    const left=data.left
+    document.getElementById("left").innerHTML=left
+    const right=data.right
+    document.getElementById("right").innerHTML=right
+    console.log(data)
+    console.log(data.number)
+    document.getElementById("gameinfo").innerHTML="Player " + data.player + " tried " + data.number
 
-// Array to store matched placeholders
-var placeholders = [];
-var match;
+});
+socket.on('guesterror', function() {
+    alert("no guess allow")
+});
+socket.on('join', function(data) {
+    const playerlist=document.getElementById("playerlist")
+    playerlist.innerHTML+=data.user+"<br>"
+});
+socket.on('end', function(data) {
+    const left="x"
+    const right="x"
+    document.getElementById("gameinfo").innerHTML="The game has ended"
+    document.getElementById("winner").innerHTML=data.player
+});
 
-// Loop through the paragraph content and find placeholders
-while ((match = placeholderRegex.exec(range_num)) !== null) {
-    placeholders.push(match[1]);
+
+function startgame() {
+    socket.emit('start');
 }
-function check_number(){
-    //placeholders = [12,100];
-    let a = document.getElementById("guess-number").textContent;
-    let guess = parseInt(a)
-    if (guess<placeholders[0] && guess>placeholders[1]){
-        console.log("The number you selected in not in the range!");
-    }
+function guess() {
+    const chat = document.getElementById("guess-number").value;
+    const data = { number: chat};
+    socket.emit('guess', data);
 }
+
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     var sec = document.getElementById("sec").value;
@@ -107,6 +124,12 @@ function sendmsg() {
         });
     }
     )
+    // fetch('/winner')
+    // .then(response => response.json())
+    // .then(player => {
+    //     document.getElementById("winner").innerHTML=player
+    // }
+    // )
 
 }
 function thumbs_up(id){
