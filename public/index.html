@@ -50,8 +50,9 @@
             <div>
                 <div id="game-container">
                     <button id="start-game-btn">Start Game</button>
-                    Guess a number between 0 to 100
-                    <input type="number" id="guess-number">
+                    <p id="range">Guess a number from {{ start }} to {{ end }}</p>
+                    Enter: <input type="number" id="guess-number">
+                    <button onclick="check_number()">Submit</button>
                     <div id="winner"></div>
                 </div>
 

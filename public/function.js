@@ -43,6 +43,27 @@ socket.on('player', function(player_list){
         player.appendChild(each);
     })
 })
+const range_num = document.getElementById("range").textContent;
+
+// Regular expression to match placeholders
+var placeholderRegex = /{{(.*?)}}/g;
+
+// Array to store matched placeholders
+var placeholders = [];
+var match;
+
+// Loop through the paragraph content and find placeholders
+while ((match = placeholderRegex.exec(range_num)) !== null) {
+    placeholders.push(match[1]);
+}
+function check_number(){
+    //placeholders = [12,100];
+    let a = document.getElementById("guess-number").textContent;
+    let guess = parseInt(a)
+    if (guess<placeholders[0] && guess>placeholders[1]){
+        console.log("The number you selected in not in the range!");
+    }
+}
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     var sec = document.getElementById("sec").value;
