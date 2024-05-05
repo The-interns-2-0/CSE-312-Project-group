@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 # mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-mongo_client = MongoClient("localhost")
+mongo_client = MongoClient("mongo")
 player=[]
 global gamenumber,left,right
 gamenumber=-1
@@ -25,7 +25,7 @@ collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
 private_collection=db['private']
-
+LastWinner = db['winner']
 like_collection=db["like_or_dislike"]
 import time
 ip_requests = {}
@@ -109,7 +109,18 @@ def get_data():
     collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"none"})
     return redirect("/",302)
 
+@app.route("/winner")
+def winnerBegin():
+    winner_document = LastWinner.find_one({})
 
+    if winner_document:
+        player_name = winner_document.get("playerName")
+        if player_name:
+            winner = {"name": player_name}
+            return jsonify(winner)
+
+    default_winner = {"name": "No winner yet"}
+    return jsonify(default_winner)
 @app.route("/login", methods=['GET','POST'])
 def login():
     data = request.form
@@ -282,7 +293,11 @@ def handle_guess(data):
         ranges= {'left': left, 'right': right}
     else:
         socketio.emit('end',{"player":session_ids[request.sid]})
-        #session_ids[request.sid] to database
+        if LastWinner.find_one({"player":"player"})== None:
+            LastWinner.insert_one({"player": "player", "playerName": session_ids[request.sid]})
+        else:
+            # chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
+            LastWinner.update_one({"player": "player"}, {"$set":{ "playerName": session_ids[request.sid]}})
         player=[]
         gamenumber=-1
         left=0

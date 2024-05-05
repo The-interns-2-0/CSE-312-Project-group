@@ -64,6 +64,9 @@ socket.on('guesterror', function() {
 });
 socket.on('join', function(data) {
     const user_list=document.getElementById("user_list")
+    if (user_list.innerHTML.split("<br>").includes(data.user)){
+        return
+    }
     user_list.innerHTML+=data.user+"<br>"
 });
 socket.on('end', function(data) {
@@ -81,6 +84,7 @@ socket.on('end', function(data) {
 function startgame() {
     socket.emit('start');
 }
+
 function guess() {
     const number = parseInt(document.getElementById("guess-number").value);
     const left=document.getElementById("left").innerHTML
@@ -135,12 +139,12 @@ function sendmsg() {
         });
     }
     )
-    // fetch('/winner')
-    // .then(response => response.json())
-    // .then(player => {
-    //     document.getElementById("winner").innerHTML=player
-    // }
-    // )
+    fetch('/winner')
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.name);
+        document.getElementById("winner-name").innerHTML = data.name;
+    });
 
 }
 function thumbs_up(id){
