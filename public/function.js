@@ -75,6 +75,8 @@ socket.on('end', function(data) {
     document.getElementById("winner-name").innerHTML=data.player
     document.getElementById("start-game-btn").innerHTML="Start Game"
     document.getElementById("start-game-btn").setAttribute("onclick", "startgame()");
+    const user_list=document.getElementById("user_list")
+    user_list.innerHTML=""
 });
 
 
