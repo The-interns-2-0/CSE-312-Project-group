@@ -11,10 +11,10 @@ from random import randrange
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-mongo_client = MongoClient("mongo")
+# mongo_client = MongoClient("mongo")
 # db = mongo_client['user_database']
 
-# mongo_client = MongoClient("localhost")
+mongo_client = MongoClient("mongo")
 player=[]
 global gamenumber,left,right
 gamenumber=-1
@@ -24,9 +24,8 @@ db = mongo_client["mongo-1"]
 collection = db['user_infor']
 auth_collection = db['auth_db']
 chat_collection = db['chat']
-LastWinner = db['winner']
 private_collection=db['private']
-
+LastWinner = db['winner']
 like_collection=db["like_or_dislike"]
 import time
 ip_requests = {}
@@ -110,7 +109,18 @@ def get_data():
     collection.insert_one({"username":escape(data.get("reg_user")),"password":hash_password(data.get("reg_pass")),"profile_pic":"none"})
     return redirect("/",302)
 
+@app.route("/winner")
+def winnerBegin():
+    winner_document = LastWinner.find_one({})
 
+    if winner_document:
+        player_name = winner_document.get("playerName")
+        if player_name:
+            winner = {"name": player_name}
+            return jsonify(winner)
+
+    default_winner = {"name": "No winner yet"}
+    return jsonify(default_winner)
 @app.route("/login", methods=['GET','POST'])
 def login():
     data = request.form
@@ -237,8 +247,6 @@ def handle_connection():
     auth=request.cookies.get('auth_token')
     if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
         session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
-    # print(freq)
-
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
 
     # Create a new dictionary with keys as "first", "second", and "third"
@@ -247,6 +255,11 @@ def handle_connection():
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
+@socketio.on('disconnect')
+def handle_disconnect():
+    global session_ids,player
+    del session_ids[request.sid]
+    player.remove(request.sid)
 
 @socketio.on('start')
 def handle_start():
@@ -257,8 +270,6 @@ def handle_start():
         global gamenumber
         gamenumber=randrange(0,100)
     users=[]
-    print(player)
-    print(request.sid)
     for play in player:
         users.append(session_ids[play])
         socketio.emit('join', {"user":session_ids[request.sid]},room=play)
@@ -270,7 +281,7 @@ def handle_start():
     
 @socketio.on('guess')
 def handle_guess(data):
-    print(data)
+
     guess=int(data.get("number"))
     ranges={}
     global left, right, gamenumber,player
@@ -281,18 +292,12 @@ def handle_guess(data):
         right = guess - 1
         ranges= {'left': left, 'right': right}
     else:
-
-        # last_list = LastWinner.find({})
-        
+        socketio.emit('end',{"player":session_ids[request.sid]})
         if LastWinner.find_one({"player":"player"})== None:
             LastWinner.insert_one({"player": "player", "playerName": session_ids[request.sid]})
         else:
             # chat_collection.update_one({"_id":post_id},{"$set":{"thumbsup":chat_item["thumbsup"] + 1 }})
             LastWinner.update_one({"player": "player"}, {"$set":{ "playerName": session_ids[request.sid]}})
-
-        socketio.emit('end',{"player":session_ids[request.sid]})
-        
-        #session_ids[request.sid] to database
         player=[]
         gamenumber=-1
         left=0
@@ -427,22 +432,6 @@ def upload():
                     chat_collection.update_one({"_id": i["_id"]}, {"$set": {"profile_pic": "./public/Image/" + filename}})
             return redirect("/",302)
     return 401
-
-
-@app.route("/winner")
-def winnerBegin():
-    winner_document = LastWinner.find_one({})
-    
-    if winner_document:
-        player_name = winner_document.get("playerName")
-        if player_name:
-            winner = {"name": player_name}
-            return jsonify(winner)
-    
-    default_winner = {"name": "No winner yet"}
-    return jsonify(default_winner)
-
-
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8080,allow_unsafe_werkzeug=True)#, ssl_context=('./nginx/cert.pem', './nginx/private.key')

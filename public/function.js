@@ -20,7 +20,7 @@ socket.on('response', function(user_message) {
     messages.scrollIntoView(false);
     const chatMessages = document.getElementById("chatbox");
     chatMessages.value = "";
-
+    
 });
 socket.on('lead', function(top) {
     fir=document.getElementById("1");
@@ -31,7 +31,7 @@ socket.on('lead', function(top) {
     thi.innerHTML = top[3]  ? top[3] : "None";
 });
 socket.on('error', function(top) {
-    document.getElementById('content').innerHTML =
+    document.getElementById('content').innerHTML = 
     '<h1>Error 429 - Too Many Requests</h1>'
 });
 socket.on('start', function(data) {
@@ -44,7 +44,6 @@ socket.on('start', function(data) {
     console.log(data);
     data.users.forEach(
         user =>
-
         user_list.innerHTML+=user+"<br>"
     )
     document.getElementById("start-game-btn").innerHTML="Guess number"
@@ -60,25 +59,14 @@ socket.on('continue', function(data) {
     document.getElementById("gameinfo").innerHTML="Player " + data.player + " tried " + data.number
 
 });
-const start = parseInt(document.getElementById("left").textContent);
-const end = parseInt(document.getElementById("right").textContent);
-function check_number(){
-    const guess = parseInt(document.getElementById("guess-number").textContent);
-
-    if (guess>start || guess<end){
-        document.getElementById('error').innerHTML = "The number you submitted is not in the range!";
-    }
-    else{
-        document.getElementById('error').innerHTML = "";
-    }
-}
-
 socket.on('guesterror', function() {
     alert("no guess allow")
 });
 socket.on('join', function(data) {
-    console.log(data)
     const user_list=document.getElementById("user_list")
+    if (user_list.innerHTML.split("<br>").includes(data.user)){
+        return
+    }
     user_list.innerHTML+=data.user+"<br>"
 });
 socket.on('end', function(data) {
@@ -88,16 +76,24 @@ socket.on('end', function(data) {
     document.getElementById("winner-name").innerHTML=data.player
     document.getElementById("start-game-btn").innerHTML="Start Game"
     document.getElementById("start-game-btn").setAttribute("onclick", "startgame()");
+    const user_list=document.getElementById("user_list")
+    user_list.innerHTML=""
 });
 
 
 function startgame() {
-    check_number();
     socket.emit('start');
 }
+
 function guess() {
-    const chat = document.getElementById("guess-number").value;
-    const data = { number: chat};
+    const number = parseInt(document.getElementById("guess-number").value);
+    const left=document.getElementById("left").innerHTML
+    const right =document.getElementById("right").innerHTML
+    if (number < left || number > right) {
+        alert("Number is outside the specified range!");
+        return
+    } 
+    const data = { number: number};
     socket.emit('guess', data);
 }
 
@@ -111,7 +107,6 @@ function addchat() {
     console.log(sec);
     if (ws){
         socket.emit('message', data);
-
     }
     else{
     fetch('/addchat', {
@@ -119,8 +114,8 @@ function addchat() {
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
@@ -159,14 +154,14 @@ function thumbs_up(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-
+    
     ;
 }
 
@@ -177,14 +172,14 @@ function thumbs_down(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Credentials" : true
+            "Access-Control-Allow-Origin" : "*", 
+            "Access-Control-Allow-Credentials" : true 
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-
+    
     ;
 }
 // document.addEventListener('DOMContentLoaded', function() {
@@ -195,5 +190,3 @@ function thumbs_down(id){
 //     // Send heartbeat every second
 //     setInterval(sendHeartbeat, 1000);
 // });
-
-
