@@ -23,9 +23,18 @@ chat_collection = db['chat']
 private_collection=db['private']
 
 like_collection=db["like_or_dislike"]
+import time
+ip_requests = {}
+blocked_ips = {}
+session_ids={}
 @app.route("/", methods=['GET','POST'])
 def index():
-    # if request.method == 'GET':
+        
+        client_ip = request.remote_addr
+        if  ip_requests[client_ip]:
+            ip_requests[client_ip] = {'count': ip_requests[client_ip].get("count")+5, 'times': time.time()}
+        else:
+            ip_requests[client_ip] = {'count': 5, 'times': time.time()}
         with open("./public/index.html","r") as file:
             file = file.read()
             auth=request.cookies.get('auth_token')
@@ -33,6 +42,7 @@ def index():
             # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
             if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
                 file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
+                session_ids[auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")] = request.sid
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -219,7 +229,7 @@ def handle_connection():
     for x in chat_collection.find({}):
       if x.get("username")!="Guest":
         freq[x.get("username")]=freq.get(x.get("username"),0)+1
-    print(freq)
+    # print(freq)
 
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
 
@@ -230,9 +240,27 @@ def handle_connection():
     # print(result_dict)
     socketio.emit('lead', result_dict)
 
-
 @socketio.on('message')
 def handle_message(data):
+    client_ip = request.remote_addr
+    print(ip_requests[client_ip]['count'])
+    if client_ip in blocked_ips:
+        if time.time() - blocked_ips[client_ip] >= 30:
+            del blocked_ips[client_ip] 
+        else:
+            socketio.emit('error','Too Many Requests. Please try again later.')
+            return
+    if client_ip in ip_requests:
+        if ip_requests[client_ip]['times'] < time.time() - 10:
+            ip_requests[client_ip] = {'count': 1, 'times': time.time()}
+        else:
+            ip_requests[client_ip]['count'] += 1
+            if ip_requests[client_ip]['count'] > 50:
+                blocked_ips[client_ip] = time.time() 
+                socketio.emit('error', 'Too Many Requests. Please try again later.')
+                return 
+    else:
+        ip_requests[client_ip] = {'count': 1, 'times': time.time()}
     msg=data.get("chat")
     msg=escape(msg)
     name = "Guest"
@@ -241,9 +269,8 @@ def handle_message(data):
     id = uuid.uuid4()
     if auth_collection.find_one({"auth_token":hashtoken})!= None:
         item = auth_collection.find_one({"auth_token":hashtoken})
-        print(item)
+        # print(item)
         name = item["username"]
-    print(name)
     user_info= collection.find_one({"username":name})
     profile_pic = "./public/Image/yogurt.jpg"
     if user_info != None:
@@ -284,15 +311,10 @@ def handle_message(data):
             socketio.sleep(1)
         chat_collection.insert_one(chat_message)
         socketio.emit('response', response)
-    print("overhere")
     if delay>0:
         socketio.start_background_task(post_scheduler, delay)
     else:
         chat_collection.insert_one(chat_message)
-
-        print("emitted")
-        print(profile_pic)
-
         socketio.emit('response', response)  # Echo the message back to the client
     freq={}
     for x in chat_collection.find({}):
@@ -308,10 +330,6 @@ def handle_message(data):
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
-
-
-
-
 
 UPLOAD_FOLDER = './public/Image'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

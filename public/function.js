@@ -30,6 +30,10 @@ socket.on('lead', function(top) {
     sec.innerHTML = top[2]  ? top[2] : "None";
     thi.innerHTML = top[3]  ? top[3] : "None";
 });
+socket.on('error', function(top) {
+    document.getElementById('content').innerHTML = 
+    '<h1>Error 429 - Too Many Requests</h1>'
+});
 socket.on('getmessage', function(allmsg) {
     
 });
