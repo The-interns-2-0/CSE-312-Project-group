@@ -94,6 +94,7 @@ function sendmsg() {
         });
     }
     )
+    
     fetch('/winner')
     .then(response => response.json())
     .then(player => {

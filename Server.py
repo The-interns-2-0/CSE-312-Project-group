@@ -131,6 +131,7 @@ def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth_token')
     return resp
+
 @app.route("/addchat", methods=['GET','POST'])
 def add():
     if request.method == 'GET':
@@ -240,7 +241,7 @@ def handle_connection():
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
-    
+
 @socketio.on('start')
 def handle_connection():
     if not player:
