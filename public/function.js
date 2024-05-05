@@ -82,8 +82,14 @@ function startgame() {
     socket.emit('start');
 }
 function guess() {
-    const chat = document.getElementById("guess-number").value;
-    const data = { number: chat};
+    const number = parseInt(document.getElementById("guess-number").value);
+    const left=document.getElementById("left").innerHTML
+    const right =document.getElementById("right").innerHTML
+    if (number < left || number > right) {
+        alert("Number is outside the specified range!");
+        return
+    } 
+    const data = { number: number};
     socket.emit('guess', data);
 }
 
@@ -97,7 +103,6 @@ function addchat() {
     console.log(sec);
     if (ws){
         socket.emit('message', data);
-
     }
     else{
     fetch('/addchat', {
