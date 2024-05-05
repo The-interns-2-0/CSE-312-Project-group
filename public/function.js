@@ -20,7 +20,7 @@ socket.on('response', function(user_message) {
     messages.scrollIntoView(false);
     const chatMessages = document.getElementById("chatbox");
     chatMessages.value = "";
-    
+
 });
 socket.on('lead', function(top) {
     fir=document.getElementById("1");
@@ -31,7 +31,7 @@ socket.on('lead', function(top) {
     thi.innerHTML = top[3]  ? top[3] : "None";
 });
 socket.on('error', function(top) {
-    document.getElementById('content').innerHTML = 
+    document.getElementById('content').innerHTML =
     '<h1>Error 429 - Too Many Requests</h1>'
 });
 socket.on('start', function(data) {
@@ -44,7 +44,7 @@ socket.on('start', function(data) {
     console.log(data);
     data.users.forEach(
         user =>
-            
+
         user_list.innerHTML+=user+"<br>"
     )
     document.getElementById("start-game-btn").innerHTML="Guess number"
@@ -60,6 +60,16 @@ socket.on('continue', function(data) {
     document.getElementById("gameinfo").innerHTML="Player " + data.player + " tried " + data.number
 
 });
+const start = parseInt(document.getElementById("left").textContent);
+const end = parseInt(document.getElementById("right").textContent);
+function check_number(){
+    const guess = parseInt(document.getElementById("guess-number").textContent);
+
+    if (guess>start || guess<end){
+        alert("The number you selected is not in the range!");
+    }
+}
+
 socket.on('guesterror', function() {
     alert("no guess allow")
 });
@@ -79,6 +89,7 @@ socket.on('end', function(data) {
 
 
 function startgame() {
+    check_number();
     socket.emit('start');
 }
 function guess() {
@@ -105,8 +116,8 @@ function addchat() {
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
@@ -145,14 +156,14 @@ function thumbs_up(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-    
+
     ;
 }
 
@@ -163,14 +174,14 @@ function thumbs_down(id){
         redirect: "follow",
         headers: {
             'Content-Type': 'application/json',
-            "Access-Control-Allow-Origin" : "*", 
-            "Access-Control-Allow-Credentials" : true 
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Credentials" : true
         },
         body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data=>location.reload())
-    
+
     ;
 }
 // document.addEventListener('DOMContentLoaded', function() {
@@ -181,3 +192,5 @@ function thumbs_down(id){
 //     // Send heartbeat every second
 //     setInterval(sendHeartbeat, 1000);
 // });
+
+
