@@ -44,7 +44,6 @@ socket.on('start', function(data) {
     console.log(data);
     data.users.forEach(
         user =>
-            
         user_list.innerHTML+=user+"<br>"
     )
     document.getElementById("start-game-btn").innerHTML="Guess number"
@@ -64,7 +63,6 @@ socket.on('guesterror', function() {
     alert("no guess allow")
 });
 socket.on('join', function(data) {
-    console.log(data)
     const user_list=document.getElementById("user_list")
     user_list.innerHTML+=data.user+"<br>"
 });

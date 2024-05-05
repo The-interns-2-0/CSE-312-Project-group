@@ -236,8 +236,6 @@ def handle_connection():
     auth=request.cookies.get('auth_token')
     if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
         session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
-    # print(freq)
-
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
 
     # Create a new dictionary with keys as "first", "second", and "third"
@@ -246,6 +244,11 @@ def handle_connection():
         result_dict[i + 1] = key
     # print(result_dict)
     socketio.emit('lead', result_dict)
+@socketio.on('disconnect')
+def handle_disconnect():
+    global session_ids,player
+    del session_ids[request.sid]
+    player.remove(request.sid)
 
 @socketio.on('start')
 def handle_start():
@@ -256,8 +259,6 @@ def handle_start():
         global gamenumber
         gamenumber=randrange(0,100)
     users=[]
-    print(player)
-    print(request.sid)
     for play in player:
         users.append(session_ids[play])
         socketio.emit('join', {"user":session_ids[request.sid]},room=play)
@@ -269,7 +270,7 @@ def handle_start():
     
 @socketio.on('guess')
 def handle_guess(data):
-    print(data)
+
     guess=int(data.get("number"))
     ranges={}
     global left, right, gamenumber,player
