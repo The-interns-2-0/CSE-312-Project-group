@@ -33,6 +33,16 @@ socket.on('lead', function(top) {
 socket.on('getmessage', function(allmsg) {
     
 });
+socket.on('player', function(player_list){
+    const player= document.getElementById(("userlist"));
+    player.innerHTML = '';
+    console.log(player_list);
+    player.forEach(user => {
+        const each = document.createElement('div');
+        player.textContent = user;
+        player.appendChild(each);
+    })
+})
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     var sec = document.getElementById("sec").value;
