@@ -43,10 +43,12 @@
             </div>
             <p>Please be careful with the words you use when speaking online❤️. Please register before posting.</p>
             <div>
-                Guess a number between 0-100
-                <input type="number" id="guessInput" min="0" max="100">
-                <button onclick="checkGuess()">Start game</button>
-                <p id="feedback"></p>
+                <div id="game-container">
+                    <button id="start-game-btn">Start Game</button>
+                    Guess a number between 0 to 100
+                    <input type="number" id="guess-number">
+                    <div id="winner"></div>
+                </div>
 
                 <script src="functions.js"></script>
             </div>
