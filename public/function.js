@@ -36,13 +36,16 @@ socket.on('error', function(top) {
 });
 socket.on('start', function(data) {
     const left=data.left
+    document.getElementById("left").innerHTML=left
     const right=data.right
+    document.getElementById("right").innerHTML=right
     document.getElementById("gameinfo").innerHTML="You are in the game"
-    const playerlist=document.getElementById("user_list")
+    const user_list=document.getElementById("user_list")
+    console.log(data);
     data.users.forEach(
         user =>
-
-        playerlist.innerHTML+=user+"<br>"
+            
+        user_list.innerHTML+=user+"<br>"
     )
     document.getElementById("start-game-btn").innerHTML="Guess number"
     document.getElementById("start-game-btn").setAttribute("onclick", "guess()");
@@ -61,14 +64,17 @@ socket.on('guesterror', function() {
     alert("no guess allow")
 });
 socket.on('join', function(data) {
-    const playerlist=document.getElementById("playerlist")
-    playerlist.innerHTML+=data.user+"<br>"
+    console.log(data)
+    const user_list=document.getElementById("user_list")
+    user_list.innerHTML+=data.user+"<br>"
 });
 socket.on('end', function(data) {
     const left="x"
     const right="x"
     document.getElementById("gameinfo").innerHTML="The game has ended"
-    document.getElementById("winner").innerHTML=data.player
+    document.getElementById("winner-name").innerHTML=data.player
+    document.getElementById("start-game-btn").innerHTML="Start Game"
+    document.getElementById("start-game-btn").setAttribute("onclick", "startgame()");
 });
 
 

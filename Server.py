@@ -265,6 +265,7 @@ def handle_start():
     print(result_dict)
     socketio.emit('start', result_dict,room=request.sid)
     player.append(request.sid)
+    socketio.emit('join', {"user":session_ids[request.sid]},room=request.sid)
     
 @socketio.on('guess')
 def handle_guess(data):
@@ -280,6 +281,7 @@ def handle_guess(data):
         ranges= {'left': left, 'right': right}
     else:
         socketio.emit('end',{"player":session_ids[request.sid]})
+        #session_ids[request.sid] to database
         player=[]
         gamenumber=-1
         left=0
