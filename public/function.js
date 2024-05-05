@@ -38,7 +38,31 @@ socket.on('start', function(data) {
     const left=data.left
     const right=data.right
     document.getElementById("gameinfo").innerHTML="You are in the game"
+    const playerlist=document.getElementById("user_list")
+    data.users.forEach(
+        user =>
 
+        playerlist.innerHTML+=user+"<br>"
+    )
+    document.getElementById("start-game-btn").innerHTML="Guess number"
+    document.getElementById("start-game-btn").setAttribute("onclick", "guess()");
+});
+socket.on('continue', function(data) {
+    const left=data.left
+    document.getElementById("left").innerHTML=left
+    const right=data.right
+    document.getElementById("right").innerHTML=right
+    console.log(data)
+    console.log(data.number)
+    document.getElementById("gameinfo").innerHTML="Player " + data.player + " tried " + data.number
+
+});
+socket.on('guesterror', function() {
+    alert("no guess allow")
+});
+socket.on('join', function(data) {
+    const playerlist=document.getElementById("playerlist")
+    playerlist.innerHTML+=data.user+"<br>"
 });
 socket.on('end', function(data) {
     const left="x"
@@ -51,6 +75,12 @@ socket.on('end', function(data) {
 function startgame() {
     socket.emit('start');
 }
+function guess() {
+    const chat = document.getElementById("guess-number").value;
+    const data = { number: chat};
+    socket.emit('guess', data);
+}
+
 function addchat() {
     const chat = document.getElementById("chatbox").value;
     var sec = document.getElementById("sec").value;
@@ -94,13 +124,12 @@ function sendmsg() {
         });
     }
     )
-    
-    fetch('/winner')
-    .then(response => response.json())
-    .then(player => {
-        document.getElementById("winner").innerHTML=player
-    }
-    )
+    // fetch('/winner')
+    // .then(response => response.json())
+    // .then(player => {
+    //     document.getElementById("winner").innerHTML=player
+    // }
+    // )
 
 }
 function thumbs_up(id){

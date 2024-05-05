@@ -46,7 +46,7 @@ def index():
             # print(auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}))
             if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
                 file=file.replace("Guest",auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username"))
-                session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
+                
             response = make_response(file)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -225,12 +225,17 @@ def dislike():
         }))
     response.status_code = 201
     return response 
+
 @socketio.on('connect')
 def handle_connection():
     freq={}
     for x in chat_collection.find({}):
       if x.get("username")!="Guest":
         freq[x.get("username")]=freq.get(x.get("username"),0)+1
+    global session_ids
+    auth=request.cookies.get('auth_token')
+    if auth!=None and auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0})!=None:
+        session_ids[request.sid] = auth_collection.find_one({"auth_token":hashlib.sha256(str(auth).encode()).hexdigest()},{"_id":0}).get("username")
     # print(freq)
 
     sorted_items = sorted(freq.items(), key=lambda item: item[1], reverse=True)[:3]
@@ -243,13 +248,48 @@ def handle_connection():
     socketio.emit('lead', result_dict)
 
 @socketio.on('start')
-def handle_connection():
+def handle_start():
+    if request.sid not in session_ids:
+        socketio.emit('guesterror',room=request.sid)
+        return
     if not player:
         global gamenumber
         gamenumber=randrange(0,100)
+    users=[]
+    print(player)
+    print(request.sid)
+    for play in player:
+        users.append(session_ids[play])
+        socketio.emit('join', {"user":session_ids[request.sid]},room=play)
+    result_dict={"left":left,"right":right,"users":users}
+    print(result_dict)
+    socketio.emit('start', result_dict,room=request.sid)
     player.append(request.sid)
-    result_dict={"left":left,"right":right}
-    socketio.emit('start', result_dict)
+    
+@socketio.on('guess')
+def handle_guess(data):
+    print(data)
+    guess=int(data.get("number"))
+    ranges={}
+    global left, right, gamenumber,player
+    if guess < gamenumber:
+        left = guess + 1
+        ranges= {'left': left, 'right': right}
+    elif guess > gamenumber:
+        right = guess - 1
+        ranges= {'left': left, 'right': right}
+    else:
+        socketio.emit('end',{"player":session_ids[request.sid]})
+        player=[]
+        gamenumber=-1
+        left=0
+        right=100
+    ranges["player"]=session_ids[request.sid]
+    ranges["number"]=guess
+    for play in player:
+        socketio.emit('continue', ranges,room=play)
+
+
 @socketio.on('message')
 def handle_message(data):
     client_ip = request.remote_addr
