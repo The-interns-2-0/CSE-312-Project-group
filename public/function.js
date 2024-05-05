@@ -66,7 +66,10 @@ function check_number(){
     const guess = parseInt(document.getElementById("guess-number").textContent);
 
     if (guess>start || guess<end){
-        alert("The number you selected is not in the range!");
+        document.getElementById('error').innerHTML = "The number you submitted is not in the range!";
+    }
+    else{
+        document.getElementById('error').innerHTML = "";
     }
 }
 
